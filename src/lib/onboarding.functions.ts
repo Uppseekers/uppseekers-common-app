@@ -11,6 +11,13 @@ import {
   recommendationsSchema,
   preferencesSchema,
 } from "./onboarding-schema";
+import {
+  scoreApplicant,
+  inferCourseKey,
+  buildShortlist,
+  type BenchmarkRow,
+  type ShortlistEntry,
+} from "./university-matcher";
 
 const ADVISOR_EMAIL = "akash@uppseekers.com";
 
@@ -79,11 +86,67 @@ export const saveSection = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
+function renderShortlist(
+  applicantScore: number,
+  courseLabel: string,
+  shortlist: ShortlistEntry[],
+): string {
+  if (!shortlist.length) return "";
+  const tone = (t: string) =>
+    t === "Dream"
+      ? "background:#fee2e2;color:#b91c1c;border:1px solid #fca5a5"
+      : t === "Reach"
+      ? "background:#ffedd5;color:#9a3412;border:1px solid #fdba74"
+      : t === "Target"
+      ? "background:#fef3c7;color:#92400e;border:1px solid #fcd34d"
+      : "background:#dcfce7;color:#166534;border:1px solid #86efac";
+  // build cards (2 per row)
+  const cardArr = shortlist.map((s) => `
+    <td style="padding:8px;vertical-align:top" width="50%">
+      <div style="border:1px solid #eee;border-radius:14px;padding:14px 16px;background:#fff">
+        <table width="100%" cellpadding="0" cellspacing="0"><tr>
+          <td style="vertical-align:top">
+            <div style="font-weight:600;color:#1e1b4b;font-size:14px">${escapeHtml(s.university)}</div>
+            <div style="font-size:11px;color:#888;margin-top:2px">${escapeHtml(s.country)}</div>
+          </td>
+          <td align="right" style="vertical-align:top">
+            <span style="font-size:10px;padding:3px 8px;border-radius:999px;${tone(s.tier)}">${s.tier}</span>
+          </td>
+        </tr></table>
+        <div style="margin-top:10px">
+          <span style="font-size:22px;font-weight:600;color:#1e1b4b">${s.match}<span style="font-size:12px;color:#999">%</span></span>
+          <span style="font-size:10px;color:#999;margin-left:8px">match · bench ${s.benchmark}</span>
+        </div>
+        <div style="margin-top:6px;height:5px;background:#eee;border-radius:999px;overflow:hidden">
+          <div style="width:${s.match}%;height:100%;background:linear-gradient(90deg,#7c3aed,#a855f7)"></div>
+        </div>
+      </div>
+    </td>`);
+  const rows2: string[] = [];
+  for (let i = 0; i < cardArr.length; i += 2) {
+    rows2.push(`<tr>${cardArr[i] || ""}${cardArr[i + 1] || `<td width="50%"></td>`}</tr>`);
+  }
+
+  return `
+    <tr><td style="padding:18px 28px 0">
+      <div style="font-size:13px;color:#7c3aed;font-weight:600;letter-spacing:0.04em">UNIVERSITY SHORTLIST · ${escapeHtml(courseLabel)}</div>
+      <div style="margin-top:6px;color:#444;font-size:13px">Applicant readiness score: <strong style="color:#1e1b4b">${applicantScore}/100</strong></div>
+    </td></tr>
+    <tr><td style="padding:8px 20px 24px">
+      <table width="100%" cellpadding="0" cellspacing="0">${rows2.join("")}</table>
+    </td></tr>
+    <tr><td style="padding:0 28px 8px;color:#888;font-size:11px">
+      Dream = stretch · Reach = ambitious · Target = realistic · Safe = high confidence. Match % derived from gap vs benchmark profile.
+    </td></tr>
+  `;
+}
+
 function renderEmailHtml(args: {
   fullName: string;
   email: string;
   userId: string;
   profile: Record<string, unknown>;
+  shortlistHtml?: string;
 }) {
   const sections = [
     ["Personal", args.profile.personal],
@@ -119,6 +182,7 @@ function renderEmailHtml(args: {
         <tr><td>
           <table width="100%" cellpadding="0" cellspacing="0">${rows}</table>
         </td></tr>
+        ${args.shortlistHtml || ""}
         <tr><td style="padding:18px 28px;background:#fafaff;color:#666;font-size:12px">
           Auto-sent by Uppseekers CAA. Reply directly to the applicant to start the path discussion.
         </td></tr>
@@ -190,8 +254,36 @@ export const submitProfile = createServerFn({ method: "POST" })
       (userInfo.user?.user_metadata as { full_name?: string } | undefined)?.full_name ||
       email;
 
-    const html = renderEmailHtml({ fullName, email, userId, profile });
-    const subject = `New Uppseekers applicant — ${fullName}`;
+    // Compute readiness score + university shortlist
+    const breakdown = scoreApplicant(profile as never);
+    const prefs = (profile.preferences ?? {}) as { intended_majors?: string };
+    const courseKey = inferCourseKey(prefs.intended_majors);
+    const courseLabel = {
+      "cs-ai": "CS / AI",
+      "ds-stats": "Data Science / Statistics",
+      "business": "Business & Administration",
+      "finance-eco": "Finance & Economics",
+    }[courseKey];
+
+    let shortlistHtml = "";
+    try {
+      const { data: benches } = await supabaseAdmin
+        .from("university_benchmarks")
+        .select("university,country,total,rank,course_key")
+        .eq("course_key", courseKey);
+      if (benches?.length) {
+        const shortlist = buildShortlist(
+          breakdown.total,
+          benches as unknown as BenchmarkRow[],
+        );
+        shortlistHtml = renderShortlist(breakdown.total, courseLabel, shortlist);
+      }
+    } catch (e) {
+      console.error("[uppseekers] shortlist build failed", e);
+    }
+
+    const html = renderEmailHtml({ fullName, email, userId, profile, shortlistHtml });
+    const subject = `New Uppseekers applicant — ${fullName} · ${breakdown.total}/100`;
 
     const sendResult = await sendAdvisorEmail(html, subject);
 
