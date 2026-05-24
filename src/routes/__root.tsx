@@ -7,6 +7,8 @@ import {
   HeadContent,
   Scripts,
 } from "@tanstack/react-router";
+import { Toaster } from "sonner";
+import { AuthProvider } from "@/hooks/useAuth";
 
 import appCss from "../styles.css?url";
 
@@ -72,9 +74,9 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "AdmitIQ AI — Know where you stand before you apply" },
-      { name: "description", content: "AI-powered undergraduate admissions evaluation. Profile scoring, university match, and improvement plans." },
-      { name: "author", content: "AdmitIQ AI" },
+      { title: "Uppseekers — Common Admission App" },
+      { name: "description", content: "Uppseekers Common Admission App — build your applicant profile and get matched with an Uppseekers advisor." },
+      { name: "author", content: "Uppseekers" },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
     ],
@@ -113,7 +115,10 @@ function RootComponent() {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <Outlet />
+      <AuthProvider>
+        <Outlet />
+        <Toaster richColors position="top-center" />
+      </AuthProvider>
     </QueryClientProvider>
   );
 }

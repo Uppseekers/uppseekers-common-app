@@ -10,14 +10,14 @@ import { Footer } from "@/components/site/Footer";
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "AdmitIQ AI — Know where you stand before you apply" },
+      { title: "Uppseekers — Common Admission App" },
       {
         name: "description",
         content:
-          "AdmitIQ AI evaluates your academic, extracurricular, and essay profile to predict your admission chances at top global universities.",
+          "Uppseekers Common Admission App — one profile that goes to an Uppseekers advisor for a personalized review and university path.",
       },
-      { property: "og:title", content: "AdmitIQ AI — Admissions intelligence for ambitious students" },
-      { property: "og:description", content: "AI-powered profile scoring & university match for undergraduate admissions." },
+      { property: "og:title", content: "Uppseekers — Common Admission App" },
+      { property: "og:description", content: "Build one applicant profile. Get matched with an Uppseekers advisor." },
     ],
   }),
   component: Index,

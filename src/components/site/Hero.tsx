@@ -45,8 +45,8 @@ export function Hero() {
           transition={{ delay: 0.35 }}
           className="mt-7 mx-auto max-w-xl text-base sm:text-lg text-muted-foreground"
         >
-          AdmitIQ AI evaluates your academics, activities, and essays —
-          then tells you which top universities you can actually get into.
+          The Uppseekers Common Admission App evaluates your academics, activities, and
+          essays — then routes your profile to an Uppseekers advisor for a personalized review.
         </motion.p>
 
         <motion.div
