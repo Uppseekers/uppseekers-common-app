@@ -13,9 +13,8 @@ import {
 } from "./onboarding-schema";
 import {
   scoreApplicant,
-  inferCourseKey,
   buildShortlist,
-  type BenchmarkRow,
+  type UniversityWeightRow,
   type ShortlistEntry,
 } from "./university-matcher";
 
@@ -106,8 +105,15 @@ function renderShortlist(
       <div style="border:1px solid #eee;border-radius:14px;padding:14px 16px;background:#fff">
         <table width="100%" cellpadding="0" cellspacing="0"><tr>
           <td style="vertical-align:top">
-            <div style="font-weight:600;color:#1e1b4b;font-size:14px">${escapeHtml(s.university)}</div>
-            <div style="font-size:11px;color:#888;margin-top:2px">${escapeHtml(s.country)}</div>
+            <table cellpadding="0" cellspacing="0"><tr>
+              <td style="padding-right:10px;vertical-align:top">
+                ${s.logoUrl ? `<img src="${escapeHtml(s.logoUrl)}" width="28" height="28" alt="${escapeHtml(s.university)} logo" style="display:block;border-radius:7px;border:1px solid #eee;background:#fff" />` : `<div style="width:28px;height:28px;border-radius:7px;background:#f4f4f5;color:#1e1b4b;text-align:center;line-height:28px;font-size:11px;font-weight:700">${escapeHtml(s.university.slice(0, 1))}</div>`}
+              </td>
+              <td style="vertical-align:top">
+                <div style="font-weight:600;color:#1e1b4b;font-size:14px">${escapeHtml(s.university)}</div>
+                <div style="font-size:11px;color:#888;margin-top:2px">${escapeHtml(s.country)}</div>
+              </td>
+            </tr></table>
           </td>
           <td align="right" style="vertical-align:top">
             <span style="font-size:10px;padding:3px 8px;border-radius:999px;${tone(s.tier)}">${s.tier}</span>
@@ -115,8 +121,9 @@ function renderShortlist(
         </tr></table>
         <div style="margin-top:10px">
           <span style="font-size:22px;font-weight:600;color:#1e1b4b">${s.match}<span style="font-size:12px;color:#999">%</span></span>
-          <span style="font-size:10px;color:#999;margin-left:8px">match · bench ${s.benchmark}</span>
+          <span style="font-size:10px;color:#999;margin-left:8px">chance · score ${s.weightedScore} / req ${s.benchmark}</span>
         </div>
+        ${s.cutoffNotes ? `<div style="font-size:10px;color:#888;margin-top:3px">${escapeHtml(s.cutoffNotes)}</div>` : ""}
         <div style="margin-top:6px;height:5px;background:#eee;border-radius:999px;overflow:hidden">
           <div style="width:${s.match}%;height:100%;background:linear-gradient(90deg,#7c3aed,#a855f7)"></div>
         </div>
@@ -136,7 +143,7 @@ function renderShortlist(
       <table width="100%" cellpadding="0" cellspacing="0">${rows2.join("")}</table>
     </td></tr>
     <tr><td style="padding:0 28px 8px;color:#888;font-size:11px">
-      Dream = stretch · Reach = ambitious · Target = realistic · Safe = high confidence. Match % derived from gap vs benchmark profile.
+      Dream = stretch · Reach = ambitious · Target = realistic · Safe = high confidence. Chance % is derived from the weighted category gap vs each university requirement.
     </td></tr>
   `;
 }
