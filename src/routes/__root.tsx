@@ -7,8 +7,6 @@ import {
   HeadContent,
   Scripts,
 } from "@tanstack/react-router";
-import { Toaster } from "sonner";
-import { AuthProvider } from "@/hooks/useAuth";
 
 import appCss from "../styles.css?url";
 
@@ -74,11 +72,17 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Uppseekers — Common Admission App" },
-      { name: "description", content: "Uppseekers Common Admission App — build your applicant profile and get matched with an Uppseekers advisor." },
-      { name: "author", content: "Uppseekers" },
+      { title: "Uppseekers Common App— Know where you stand before you apply" },
+      { name: "description", content: "4 Years research backed undergraduate admissions evaluation. Profile scoring, university match, and improvement plans." },
+      { name: "author", content: "AdmitIQ AI" },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
+      { property: "og:title", content: "Uppseekers Common App— Know where you stand before you apply" },
+      { name: "twitter:title", content: "Uppseekers Common App— Know where you stand before you apply" },
+      { property: "og:description", content: "4 Years research backed undergraduate admissions evaluation. Profile scoring, university match, and improvement plans." },
+      { name: "twitter:description", content: "4 Years research backed undergraduate admissions evaluation. Profile scoring, university match, and improvement plans." },
+      { property: "og:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/cf80b157-aaa4-4717-b02a-4065476f4344/id-preview-f49c3413--5ea3e5e0-f616-4117-825d-57478e45075f.lovable.app-1779621515709.png" },
+      { name: "twitter:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/cf80b157-aaa4-4717-b02a-4065476f4344/id-preview-f49c3413--5ea3e5e0-f616-4117-825d-57478e45075f.lovable.app-1779621515709.png" },
     ],
     links: [
       { rel: "stylesheet", href: appCss },
@@ -115,10 +119,7 @@ function RootComponent() {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <AuthProvider>
-        <Outlet />
-        <Toaster richColors position="top-center" />
-      </AuthProvider>
+      <Outlet />
     </QueryClientProvider>
   );
 }
