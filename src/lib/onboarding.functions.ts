@@ -2,8 +2,27 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
+import {
+  personalSchema,
+  academicsSchema,
+  testingSchema,
+  activitiesSchema,
+  essaysSchema,
+  recommendationsSchema,
+  preferencesSchema,
+} from "./onboarding-schema";
 
 const ADVISOR_EMAIL = "akash@uppseekers.com";
+
+const sectionSchemas = {
+  personal: personalSchema,
+  academics: academicsSchema,
+  testing: testingSchema,
+  activities: activitiesSchema,
+  essays: essaysSchema,
+  recommendations: recommendationsSchema,
+  preferences: preferencesSchema,
+} as const;
 
 const sectionKey = z.enum([
   "personal",
@@ -49,7 +68,9 @@ export const saveSection = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
-    const payload = { [data.section]: data.data as never };
+    const schema = sectionSchemas[data.section];
+    const parsed = schema.parse(data.data);
+    const payload = { [data.section]: parsed as never };
     const { error } = await supabase
       .from("applicant_profiles")
       .update(payload)
