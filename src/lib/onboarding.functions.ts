@@ -2,8 +2,27 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
+import {
+  personalSchema,
+  academicsSchema,
+  testingSchema,
+  activitiesSchema,
+  essaysSchema,
+  recommendationsSchema,
+  preferencesSchema,
+} from "./onboarding-schema";
 
 const ADVISOR_EMAIL = "akash@uppseekers.com";
+
+const sectionSchemas = {
+  personal: personalSchema,
+  academics: academicsSchema,
+  testing: testingSchema,
+  activities: activitiesSchema,
+  essays: essaysSchema,
+  recommendations: recommendationsSchema,
+  preferences: preferencesSchema,
+} as const;
 
 const sectionKey = z.enum([
   "personal",
