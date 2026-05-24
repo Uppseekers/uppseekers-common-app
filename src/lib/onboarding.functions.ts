@@ -263,25 +263,18 @@ export const submitProfile = createServerFn({ method: "POST" })
 
     // Compute readiness score + university shortlist
     const breakdown = scoreApplicant(profile as never);
-    const prefs = (profile.preferences ?? {}) as { intended_majors?: string };
-    const courseKey = inferCourseKey(prefs.intended_majors);
-    const courseLabel = {
-      "cs-ai": "CS / AI",
-      "ds-stats": "Data Science / Statistics",
-      "business": "Business & Administration",
-      "finance-eco": "Finance & Economics",
-    }[courseKey];
+    const courseLabel = "All intended courses";
 
     let shortlistHtml = "";
     try {
-      const { data: benches } = await supabaseAdmin
-        .from("university_benchmarks")
-        .select("university,country,total,rank,course_key")
-        .eq("course_key", courseKey);
-      if (benches?.length) {
+      const { data: weights } = await supabaseAdmin
+        .from("university_weights")
+        .select("rank,university,country,logo_url,course_key,academics_weight,supercurricular_weight,extracurricular_weight,cocurricular_weight,essay_sop_weight,projects_weight,leadership_weight,minimum_profile_score,cutoff_notes")
+        .eq("course_key", "all");
+      if (weights?.length) {
         const shortlist = buildShortlist(
-          breakdown.total,
-          benches as unknown as BenchmarkRow[],
+          breakdown,
+          weights as unknown as UniversityWeightRow[],
         );
         shortlistHtml = renderShortlist(breakdown.total, courseLabel, shortlist);
       }
