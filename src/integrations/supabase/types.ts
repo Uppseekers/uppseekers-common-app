@@ -14,7 +14,75 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      applicant_profiles: {
+        Row: {
+          academics: Json
+          activities: Json
+          created_at: string
+          essays: Json
+          personal: Json
+          preferences: Json
+          recommendations: Json
+          status: string
+          submitted_at: string | null
+          testing: Json
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          academics?: Json
+          activities?: Json
+          created_at?: string
+          essays?: Json
+          personal?: Json
+          preferences?: Json
+          recommendations?: Json
+          status?: string
+          submitted_at?: string | null
+          testing?: Json
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          academics?: Json
+          activities?: Json
+          created_at?: string
+          essays?: Json
+          personal?: Json
+          preferences?: Json
+          recommendations?: Json
+          status?: string
+          submitted_at?: string | null
+          testing?: Json
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          avatar_url: string | null
+          created_at: string
+          full_name: string | null
+          id: string
+          updated_at: string
+        }
+        Insert: {
+          avatar_url?: string | null
+          created_at?: string
+          full_name?: string | null
+          id: string
+          updated_at?: string
+        }
+        Update: {
+          avatar_url?: string | null
+          created_at?: string
+          full_name?: string | null
+          id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
