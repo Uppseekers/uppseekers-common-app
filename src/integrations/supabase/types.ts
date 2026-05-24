@@ -83,6 +83,66 @@ export type Database = {
         }
         Relationships: []
       }
+      university_benchmarks: {
+        Row: {
+          country: string | null
+          course_key: string
+          created_at: string
+          id: string
+          q1: number
+          q10: number
+          q2: number
+          q3: number
+          q4: number
+          q5: number
+          q6: number
+          q7: number
+          q8: number
+          q9: number
+          rank: number
+          total: number
+          university: string
+        }
+        Insert: {
+          country?: string | null
+          course_key: string
+          created_at?: string
+          id?: string
+          q1?: number
+          q10?: number
+          q2?: number
+          q3?: number
+          q4?: number
+          q5?: number
+          q6?: number
+          q7?: number
+          q8?: number
+          q9?: number
+          rank: number
+          total: number
+          university: string
+        }
+        Update: {
+          country?: string | null
+          course_key?: string
+          created_at?: string
+          id?: string
+          q1?: number
+          q10?: number
+          q2?: number
+          q3?: number
+          q4?: number
+          q5?: number
+          q6?: number
+          q7?: number
+          q8?: number
+          q9?: number
+          rank?: number
+          total?: number
+          university?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
