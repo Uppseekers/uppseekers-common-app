@@ -1,73 +1,77 @@
 import { z } from "zod";
 
+const shortText = z.string().max(255).optional();
+const mediumText = z.string().max(2000).optional();
+const longText = z.string().max(20000).optional();
+
 export const personalSchema = z.object({
   full_name: z.string().min(1).max(120),
-  date_of_birth: z.string().optional(),
-  gender: z.string().optional(),
-  nationality: z.string().optional(),
-  phone: z.string().optional(),
-  city: z.string().optional(),
-  country: z.string().optional(),
-  parent_name: z.string().optional(),
-  parent_email: z.string().email().optional().or(z.literal("")),
-  parent_phone: z.string().optional(),
+  date_of_birth: shortText,
+  gender: shortText,
+  nationality: shortText,
+  phone: shortText,
+  city: shortText,
+  country: shortText,
+  parent_name: shortText,
+  parent_email: z.string().max(255).email().optional().or(z.literal("")),
+  parent_phone: shortText,
 });
 
 export const academicsSchema = z.object({
-  school_name: z.string().optional(),
-  curriculum: z.string().optional(), // IB / CBSE / A-Levels / AP
-  grade: z.string().optional(),
-  gpa: z.string().optional(),
-  gpa_scale: z.string().optional(),
-  class_rank: z.string().optional(),
-  graduation_year: z.string().optional(),
-  honors_courses: z.string().optional(),
-  notable_subjects: z.string().optional(),
+  school_name: shortText,
+  curriculum: shortText,
+  grade: shortText,
+  gpa: shortText,
+  gpa_scale: shortText,
+  class_rank: shortText,
+  graduation_year: shortText,
+  honors_courses: mediumText,
+  notable_subjects: mediumText,
 });
 
 export const testingSchema = z.object({
-  sat_total: z.string().optional(),
-  sat_math: z.string().optional(),
-  sat_ebrw: z.string().optional(),
-  act: z.string().optional(),
-  toefl: z.string().optional(),
-  ielts: z.string().optional(),
-  duolingo: z.string().optional(),
-  ap_scores: z.string().optional(),
-  other_tests: z.string().optional(),
+  sat_total: shortText,
+  sat_math: shortText,
+  sat_ebrw: shortText,
+  act: shortText,
+  toefl: shortText,
+  ielts: shortText,
+  duolingo: shortText,
+  ap_scores: mediumText,
+  other_tests: mediumText,
 });
 
 export const activityItemSchema = z.object({
-  name: z.string().min(1),
-  role: z.string().optional(),
-  category: z.string().optional(),
-  hours_per_week: z.string().optional(),
-  weeks_per_year: z.string().optional(),
-  grades: z.string().optional(),
-  description: z.string().optional(),
+  name: z.string().min(1).max(255),
+  role: shortText,
+  category: shortText,
+  hours_per_week: shortText,
+  weeks_per_year: shortText,
+  grades: shortText,
+  description: mediumText,
 });
-export const activitiesSchema = z.array(activityItemSchema);
+export const activitiesSchema = z.array(activityItemSchema).max(50);
 
 export const essaysSchema = z.object({
-  common_essay: z.string().optional(),
-  why_us: z.string().optional(),
-  additional_info: z.string().optional(),
+  common_essay: longText,
+  why_us: longText,
+  additional_info: longText,
 });
 
 export const recommendationItemSchema = z.object({
-  recommender_name: z.string().optional(),
-  recommender_role: z.string().optional(),
-  recommender_email: z.string().email().optional().or(z.literal("")),
-  relationship: z.string().optional(),
+  recommender_name: shortText,
+  recommender_role: shortText,
+  recommender_email: z.string().max(255).email().optional().or(z.literal("")),
+  relationship: shortText,
 });
-export const recommendationsSchema = z.array(recommendationItemSchema);
+export const recommendationsSchema = z.array(recommendationItemSchema).max(20);
 
 export const preferencesSchema = z.object({
-  intended_majors: z.string().optional(),
-  preferred_countries: z.string().optional(),
-  budget_range: z.string().optional(),
-  university_list: z.string().optional(),
-  notes: z.string().optional(),
+  intended_majors: mediumText,
+  preferred_countries: mediumText,
+  budget_range: shortText,
+  university_list: longText,
+  notes: longText,
 });
 
 export const SECTION_KEYS = [
