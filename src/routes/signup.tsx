@@ -20,23 +20,35 @@ function SignUp() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    const { error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        emailRedirectTo: window.location.origin + "/onboarding",
-        data: { full_name: fullName },
-      },
-    });
-    setLoading(false);
-    if (error) return toast.error(error.message);
-    toast.success("Account created — check your inbox to verify.");
-    nav({ to: "/onboarding" });
+    try {
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          emailRedirectTo: window.location.origin + "/onboarding",
+          data: { full_name: fullName },
+        },
+      });
+      if (error) return toast.error(error.message);
+      if (data.session) {
+        toast.success("Account created");
+        await nav({ to: "/onboarding" });
+        return;
+      }
+      toast.success("Account created — check your inbox to verify before signing in.");
+      await nav({ to: "/signin" });
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Sign up failed. Please try again.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleGoogle = async () => {
+    setLoading(true);
     const res = await lovable.auth.signInWithOAuth("google", { redirect_uri: window.location.origin + "/onboarding" });
     if (res.error) toast.error(res.error.message);
+    setLoading(false);
   };
 
   return (
