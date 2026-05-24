@@ -100,37 +100,7 @@ function renderShortlist(
       : t === "Target"
       ? "background:#fef3c7;color:#92400e;border:1px solid #fcd34d"
       : "background:#dcfce7;color:#166534;border:1px solid #86efac";
-  const cards = shortlist
-    .map(
-      (s) => `
-      <td style="padding:8px" width="50%">
-        <div style="border:1px solid #eee;border-radius:14px;padding:14px 16px;background:#fff">
-          <table width="100%" cellpadding="0" cellspacing="0"><tr>
-            <td style="vertical-align:top">
-              <div style="font-weight:600;color:#1e1b4b;font-size:14px">${escapeHtml(s.university)}</div>
-              <div style="font-size:11px;color:#888;margin-top:2px">${escapeHtml(s.country)}</div>
-            </td>
-            <td align="right" style="vertical-align:top">
-              <span style="font-size:10px;padding:3px 8px;border-radius:999px;${tone(s.tier)}">${s.tier}</span>
-            </td>
-          </tr></table>
-          <div style="margin-top:10px;display:flex;align-items:baseline;justify-content:space-between">
-            <span style="font-size:22px;font-weight:600;color:#1e1b4b">${s.match}<span style="font-size:12px;color:#999">%</span></span>
-            <span style="font-size:10px;color:#999">match · bench ${s.benchmark}</span>
-          </div>
-          <div style="margin-top:6px;height:5px;background:#eee;border-radius:999px;overflow:hidden">
-            <div style="width:${s.match}%;height:100%;background:linear-gradient(90deg,#7c3aed,#a855f7)"></div>
-          </div>
-        </div>
-      </td>`,
-    )
-    .join("");
-  // group into rows of 2
-  const grouped: string[] = [];
-  for (let i = 0; i < shortlist.length; i += 2) {
-    grouped.push(`<tr>${cards.split("</td>").slice(i, i + 2).map(s => s + "</td>").join("")}</tr>`);
-  }
-  // simpler: re-split properly
+  // build cards (2 per row)
   const cardArr = shortlist.map((s) => `
     <td style="padding:8px;vertical-align:top" width="50%">
       <div style="border:1px solid #eee;border-radius:14px;padding:14px 16px;background:#fff">
