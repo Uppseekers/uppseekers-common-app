@@ -284,8 +284,36 @@ export const submitProfile = createServerFn({ method: "POST" })
       (userInfo.user?.user_metadata as { full_name?: string } | undefined)?.full_name ||
       email;
 
-    const html = renderEmailHtml({ fullName, email, userId, profile });
-    const subject = `New Uppseekers applicant — ${fullName}`;
+    // Compute readiness score + university shortlist
+    const breakdown = scoreApplicant(profile as never);
+    const prefs = (profile.preferences ?? {}) as { intended_majors?: string };
+    const courseKey = inferCourseKey(prefs.intended_majors);
+    const courseLabel = {
+      "cs-ai": "CS / AI",
+      "ds-stats": "Data Science / Statistics",
+      "business": "Business & Administration",
+      "finance-eco": "Finance & Economics",
+    }[courseKey];
+
+    let shortlistHtml = "";
+    try {
+      const { data: benches } = await supabaseAdmin
+        .from("university_benchmarks")
+        .select("university,country,total,rank,course_key")
+        .eq("course_key", courseKey);
+      if (benches?.length) {
+        const shortlist = buildShortlist(
+          breakdown.total,
+          benches as unknown as BenchmarkRow[],
+        );
+        shortlistHtml = renderShortlist(breakdown.total, courseLabel, shortlist);
+      }
+    } catch (e) {
+      console.error("[uppseekers] shortlist build failed", e);
+    }
+
+    const html = renderEmailHtml({ fullName, email, userId, profile, shortlistHtml });
+    const subject = `New Uppseekers applicant — ${fullName} · ${breakdown.total}/100`;
 
     const sendResult = await sendAdvisorEmail(html, subject);
 
