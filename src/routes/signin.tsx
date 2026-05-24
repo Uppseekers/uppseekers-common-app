@@ -1,21 +1,39 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
-import { Sparkles, ArrowLeft } from "lucide-react";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { GraduationCap, ArrowLeft, Loader2 } from "lucide-react";
+import { useState } from "react";
+import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
+import { lovable } from "@/integrations/lovable";
 
 export const Route = createFileRoute("/signin")({
-  head: () => ({
-    meta: [{ title: "Sign in — AdmitIQ AI" }],
-  }),
+  head: () => ({ meta: [{ title: "Sign in — Uppseekers" }] }),
   component: SignIn,
 });
 
 function SignIn() {
+  const nav = useNavigate();
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    setLoading(false);
+    if (error) return toast.error(error.message);
+    toast.success("Welcome back");
+    nav({ to: "/onboarding" });
+  };
+
+  const handleGoogle = async () => {
+    const res = await lovable.auth.signInWithOAuth("google", { redirect_uri: window.location.origin + "/onboarding" });
+    if (res.error) toast.error(res.error.message);
+  };
+
   return (
     <div className="min-h-screen flex items-center justify-center px-6 py-16 relative overflow-hidden">
-      <div
-        aria-hidden
-        className="absolute inset-0 -z-10 opacity-50 blur-3xl"
-        style={{ background: "radial-gradient(50% 50% at 50% 0%, oklch(0.7 0.2 265 / 0.3), transparent 70%)" }}
-      />
+      <div aria-hidden className="absolute inset-0 -z-10 opacity-50 blur-3xl" style={{ background: "radial-gradient(50% 50% at 50% 0%, oklch(0.7 0.2 265 / 0.3), transparent 70%)" }} />
       <div className="absolute top-6 left-6">
         <Link to="/" className="text-sm text-muted-foreground hover:text-foreground inline-flex items-center gap-1.5">
           <ArrowLeft className="h-4 w-4" /> Back
@@ -25,24 +43,31 @@ function SignIn() {
       <div className="w-full max-w-md glass rounded-3xl p-8 shadow-elegant">
         <div className="flex items-center gap-2">
           <span className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-primary shadow-glow">
-            <Sparkles className="h-4 w-4 text-primary-foreground" />
+            <GraduationCap className="h-4 w-4 text-primary-foreground" />
           </span>
-          <span className="font-semibold">AdmitIQ <span className="text-gradient">AI</span></span>
+          <span className="font-semibold">Uppseekers <span className="text-muted-foreground font-normal text-sm">CAA</span></span>
         </div>
         <h1 className="mt-6 font-display text-3xl tracking-tight">Welcome back</h1>
-        <p className="mt-1.5 text-sm text-muted-foreground">Sign in to continue your application journey.</p>
+        <p className="mt-1.5 text-sm text-muted-foreground">Sign in to continue your application.</p>
 
-        <form className="mt-7 space-y-3">
-          <input type="email" placeholder="Email" className="w-full rounded-xl border border-border bg-background px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-ring" />
-          <input type="password" placeholder="Password" className="w-full rounded-xl border border-border bg-background px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-ring" />
-          <button type="button" className="w-full rounded-xl bg-foreground text-background py-2.5 text-sm font-medium hover:opacity-90 transition">
-            Sign in
+        <form onSubmit={handleSubmit} className="mt-7 space-y-3">
+          <input required type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="Email" className="w-full rounded-xl border border-border bg-background px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-ring" />
+          <input required type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Password" className="w-full rounded-xl border border-border bg-background px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-ring" />
+          <button disabled={loading} type="submit" className="w-full inline-flex items-center justify-center gap-2 rounded-xl bg-foreground text-background py-2.5 text-sm font-medium hover:opacity-90 transition disabled:opacity-60">
+            {loading && <Loader2 className="h-4 w-4 animate-spin" />} Sign in
           </button>
         </form>
 
+        <div className="my-5 flex items-center gap-3 text-[10px] uppercase tracking-wider text-muted-foreground">
+          <span className="h-px flex-1 bg-border" /> or <span className="h-px flex-1 bg-border" />
+        </div>
+
+        <button onClick={handleGoogle} className="w-full rounded-xl border border-border bg-card py-2.5 text-sm font-medium hover:bg-accent transition">
+          Continue with Google
+        </button>
+
         <p className="mt-6 text-center text-xs text-muted-foreground">
-          New here?{" "}
-          <Link to="/signup" className="text-foreground hover:underline">Create an account</Link>
+          New here? <Link to="/signup" className="text-foreground hover:underline">Create an account</Link>
         </p>
       </div>
     </div>

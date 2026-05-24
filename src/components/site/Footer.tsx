@@ -29,11 +29,11 @@ export function Footer() {
                 <Sparkles className="h-4 w-4 text-primary-foreground" />
               </span>
               <span className="font-semibold tracking-tight">
-                AdmitIQ <span className="text-gradient">AI</span>
+                Uppseekers <span className="text-muted-foreground font-normal">— Common Admission App</span>
               </span>
             </div>
             <p className="mt-4 text-sm text-muted-foreground max-w-xs">
-              Admissions intelligence for the next generation. Know where you stand before you apply.
+              One profile, every dream school. Built by Uppseekers for ambitious undergrad applicants.
             </p>
           </div>
           {cols.map((c) => (
@@ -50,8 +50,8 @@ export function Footer() {
           ))}
         </div>
         <div className="mt-12 pt-6 border-t border-border flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-muted-foreground">
-          <p>© {new Date().getFullYear()} AdmitIQ AI. All rights reserved.</p>
-          <p>Built for ambitious students.</p>
+          <p>© {new Date().getFullYear()} Uppseekers. All rights reserved.</p>
+          <p>akash@uppseekers.com</p>
         </div>
       </div>
     </footer>
