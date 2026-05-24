@@ -11,6 +11,13 @@ import {
   recommendationsSchema,
   preferencesSchema,
 } from "./onboarding-schema";
+import {
+  scoreApplicant,
+  inferCourseKey,
+  buildShortlist,
+  type BenchmarkRow,
+  type ShortlistEntry,
+} from "./university-matcher";
 
 const ADVISOR_EMAIL = "akash@uppseekers.com";
 
