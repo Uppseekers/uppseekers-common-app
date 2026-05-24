@@ -19,16 +19,23 @@ function SignIn() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
-    setLoading(false);
-    if (error) return toast.error(error.message);
-    toast.success("Welcome back");
-    nav({ to: "/onboarding" });
+    try {
+      const { error } = await supabase.auth.signInWithPassword({ email, password });
+      if (error) return toast.error(error.message);
+      toast.success("Welcome back");
+      await nav({ to: "/onboarding" });
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Sign in failed. Please try again.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleGoogle = async () => {
+    setLoading(true);
     const res = await lovable.auth.signInWithOAuth("google", { redirect_uri: window.location.origin + "/onboarding" });
     if (res.error) toast.error(res.error.message);
+    setLoading(false);
   };
 
   return (
