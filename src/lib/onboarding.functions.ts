@@ -114,27 +114,32 @@ function escapeHtml(s: string) {
 }
 
 async function sendAdvisorEmail(html: string, subject: string) {
-  const key = process.env.RESEND_API_KEY;
-  if (!key) {
-    console.warn("[uppseekers] RESEND_API_KEY missing — skipping advisor email send");
-    return { sent: false, reason: "missing_api_key" as const };
+  const token = process.env.ZEPTOMAIL_TOKEN;
+  const from = process.env.ZEPTOMAIL_FROM_EMAIL;
+  const region = (process.env.ZEPTOMAIL_REGION || "in").toLowerCase();
+  if (!token || !from) {
+    console.warn("[uppseekers] ZeptoMail env missing — skipping advisor email send");
+    return { sent: false, reason: "missing_env" as const };
   }
-  const res = await fetch("https://api.resend.com/emails", {
+  const host = region === "com" ? "api.zeptomail.com" : `api.zeptomail.${region}`;
+  const authHeader = token.startsWith("Zoho-enczapikey ") ? token : `Zoho-enczapikey ${token}`;
+  const res = await fetch(`https://${host}/v1.1/email`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      Authorization: `Bearer ${key}`,
+      Accept: "application/json",
+      Authorization: authHeader,
     },
     body: JSON.stringify({
-      from: "Uppseekers CAA <onboarding@resend.dev>",
-      to: [ADVISOR_EMAIL],
+      from: { address: from, name: "Uppseekers CAA" },
+      to: [{ email_address: { address: ADVISOR_EMAIL, name: "Akash" } }],
       subject,
-      html,
+      htmlbody: html,
     }),
   });
   if (!res.ok) {
     const text = await res.text();
-    console.error("[uppseekers] resend send failed", res.status, text);
+    console.error("[uppseekers] zeptomail send failed", res.status, text);
     return { sent: false, reason: "send_failed" as const };
   }
   return { sent: true };
