@@ -178,6 +178,10 @@ export const submitProfile = createServerFn({ method: "POST" })
       .single();
     if (error || !profile) throw new Error(error?.message ?? "Profile not found");
 
+    if (profile.status === "submitted") {
+      return { ok: true, emailSent: false, alreadySubmitted: true };
+    }
+
     const { data: userInfo } = await supabaseAdmin.auth.admin.getUserById(userId);
     const email = userInfo.user?.email ?? "unknown";
     const personal = (profile.personal ?? {}) as { full_name?: string };
