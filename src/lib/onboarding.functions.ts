@@ -212,6 +212,7 @@ function renderEmailHtml(args: {
         <tr><td>
           <table width="100%" cellpadding="0" cellspacing="0">${rows}</table>
         </td></tr>
+        ${args.shortlistHtml || ""}
         <tr><td style="padding:18px 28px;background:#fafaff;color:#666;font-size:12px">
           Auto-sent by Uppseekers CAA. Reply directly to the applicant to start the path discussion.
         </td></tr>
