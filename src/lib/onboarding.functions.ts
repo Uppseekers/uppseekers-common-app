@@ -68,7 +68,9 @@ export const saveSection = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
-    const payload = { [data.section]: data.data as never };
+    const schema = sectionSchemas[data.section];
+    const parsed = schema.parse(data.data);
+    const payload = { [data.section]: parsed as never };
     const { error } = await supabase
       .from("applicant_profiles")
       .update(payload)
