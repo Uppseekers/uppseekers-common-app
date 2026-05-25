@@ -77,11 +77,17 @@ export const saveSection = createServerFn({ method: "POST" })
     const schema = sectionSchemas[data.section];
     const parsed = schema.parse(data.data);
     const payload = { [data.section]: parsed as never };
-    const { error } = await supabase
+    // Atomic guard: refuse to mutate sections once profile is submitted
+    const { data: rows, error } = await supabase
       .from("applicant_profiles")
       .update(payload)
-      .eq("user_id", userId);
+      .eq("user_id", userId)
+      .neq("status", "submitted")
+      .select("user_id");
     if (error) throw new Error(error.message);
+    if (!rows || rows.length === 0) {
+      throw new Error("Profile already submitted and cannot be modified.");
+    }
     return { ok: true };
   });
 
