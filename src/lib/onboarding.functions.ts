@@ -67,6 +67,13 @@ export const getMyProfile = createServerFn({ method: "GET" })
     return data;
   });
 
+const RETRY_COOLDOWN_MS = 7 * 24 * 60 * 60 * 1000;
+const UNLIMITED_DOMAIN = "@uppseekers.com";
+
+function isUnlimitedEmail(email: string | null | undefined) {
+  return !!email && email.toLowerCase().endsWith(UNLIMITED_DOMAIN);
+}
+
 export const saveSection = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input) =>
@@ -77,17 +84,41 @@ export const saveSection = createServerFn({ method: "POST" })
     const schema = sectionSchemas[data.section];
     const parsed = schema.parse(data.data);
     const payload = { [data.section]: parsed as never };
-    // Atomic guard: refuse to mutate sections once profile is submitted
-    const { data: rows, error } = await supabase
+    const { error } = await supabase
       .from("applicant_profiles")
       .update(payload)
-      .eq("user_id", userId)
-      .neq("status", "submitted")
-      .select("user_id");
+      .eq("user_id", userId);
     if (error) throw new Error(error.message);
-    if (!rows || rows.length === 0) {
-      throw new Error("Profile already submitted and cannot be modified.");
+    return { ok: true };
+  });
+
+export const startRetry = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { supabase, userId } = context;
+    const { data: userInfo } = await supabaseAdmin.auth.admin.getUserById(userId);
+    const email = userInfo.user?.email ?? "";
+    const { data: profile, error } = await supabase
+      .from("applicant_profiles")
+      .select("status,submitted_at")
+      .eq("user_id", userId)
+      .maybeSingle();
+    if (error) throw new Error(error.message);
+    if (!profile || profile.status !== "submitted") {
+      return { ok: true };
     }
+    if (!isUnlimitedEmail(email) && profile.submitted_at) {
+      const elapsed = Date.now() - new Date(profile.submitted_at).getTime();
+      if (elapsed < RETRY_COOLDOWN_MS) {
+        const nextAt = new Date(new Date(profile.submitted_at).getTime() + RETRY_COOLDOWN_MS).toISOString();
+        throw new Error(`You can retry once a week. Next retry available on ${new Date(nextAt).toLocaleDateString()}.`);
+      }
+    }
+    const { error: upErr } = await supabase
+      .from("applicant_profiles")
+      .update({ status: "in_progress" })
+      .eq("user_id", userId);
+    if (upErr) throw new Error(upErr.message);
     return { ok: true };
   });
 
