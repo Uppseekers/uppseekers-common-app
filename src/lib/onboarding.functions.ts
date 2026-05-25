@@ -259,6 +259,19 @@ export const submitProfile = createServerFn({ method: "POST" })
       return { ok: true, emailSent: false, alreadySubmitted: true };
     }
 
+    // Atomically claim the submission slot — only one concurrent request wins.
+    const submittedAt = new Date().toISOString();
+    const { data: claimed, error: claimError } = await supabase
+      .from("applicant_profiles")
+      .update({ status: "submitted", submitted_at: submittedAt })
+      .eq("user_id", userId)
+      .neq("status", "submitted")
+      .select("user_id");
+    if (claimError) throw new Error(claimError.message);
+    if (!claimed || claimed.length === 0) {
+      return { ok: true, emailSent: false, alreadySubmitted: true };
+    }
+
     const { data: userInfo } = await supabaseAdmin.auth.admin.getUserById(userId);
     const email = userInfo.user?.email ?? "unknown";
     const personal = (profile.personal ?? {}) as { full_name?: string };
@@ -292,11 +305,6 @@ export const submitProfile = createServerFn({ method: "POST" })
     const subject = `New Uppseekers applicant — ${fullName} · ${breakdown.total}/100`;
 
     const sendResult = await sendAdvisorEmail(html, subject);
-
-    await supabase
-      .from("applicant_profiles")
-      .update({ status: "submitted", submitted_at: new Date().toISOString() })
-      .eq("user_id", userId);
 
     return { ok: true, emailSent: sendResult.sent };
   });
