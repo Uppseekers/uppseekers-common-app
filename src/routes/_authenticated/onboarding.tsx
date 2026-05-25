@@ -106,7 +106,15 @@ function Onboarding() {
   }
 
   if (submitted) {
-    return <Submitted />;
+    return <Submitted email={user?.email ?? ""} onRetry={async () => {
+      try {
+        await retry({});
+        setSubmitted(false);
+        toast.success("You can now edit and resubmit.");
+      } catch (e: any) {
+        toast.error(e.message);
+      }
+    }} />;
   }
 
   return (
