@@ -31,6 +31,7 @@ function Onboarding() {
   const fetchProfile = useServerFn(getMyProfile);
   const save = useServerFn(saveSection);
   const submit = useServerFn(submitProfile);
+  const retry = useServerFn(startRetry);
 
   const [active, setActive] = useState<SectionKey>("personal");
   const [state, setState] = useState<State | null>(null);
