@@ -304,16 +304,16 @@ function SectionForm({ sectionKey, value, onChange }: { sectionKey: SectionKey; 
     return (
       <SectionCard title="Personal details" desc="Tell your advisor who they're working with.">
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <Field label="Full name"><input className={inputCls} value={value.full_name ?? ""} onChange={(e) => upd("full_name", e.target.value)} /></Field>
-          <Field label="Date of birth"><input type="date" className={inputCls} value={value.date_of_birth ?? ""} onChange={(e) => upd("date_of_birth", e.target.value)} /></Field>
-          <Field label="Gender"><input className={inputCls} value={value.gender ?? ""} onChange={(e) => upd("gender", e.target.value)} /></Field>
-          <Field label="Nationality"><input className={inputCls} value={value.nationality ?? ""} onChange={(e) => upd("nationality", e.target.value)} /></Field>
-          <Field label="Phone"><input className={inputCls} value={value.phone ?? ""} onChange={(e) => upd("phone", e.target.value)} /></Field>
-          <Field label="City"><input className={inputCls} value={value.city ?? ""} onChange={(e) => upd("city", e.target.value)} /></Field>
-          <Field label="Country"><input className={inputCls} value={value.country ?? ""} onChange={(e) => upd("country", e.target.value)} /></Field>
-          <Field label="Parent / Guardian name"><input className={inputCls} value={value.parent_name ?? ""} onChange={(e) => upd("parent_name", e.target.value)} /></Field>
-          <Field label="Parent email"><input type="email" className={inputCls} value={value.parent_email ?? ""} onChange={(e) => upd("parent_email", e.target.value)} /></Field>
-          <Field label="Parent phone"><input className={inputCls} value={value.parent_phone ?? ""} onChange={(e) => upd("parent_phone", e.target.value)} /></Field>
+          <Field label="Full name" hint="As it appears on your passport / school records."><input className={inputCls} value={value.full_name ?? ""} onChange={(e) => upd("full_name", e.target.value)} /></Field>
+          <Field label="Date of birth" hint="Used by universities to verify age eligibility."><input type="date" className={inputCls} value={value.date_of_birth ?? ""} onChange={(e) => upd("date_of_birth", e.target.value)} /></Field>
+          <Field label="Gender" hint="Optional. Used only for demographic reporting."><input className={inputCls} value={value.gender ?? ""} onChange={(e) => upd("gender", e.target.value)} /></Field>
+          <Field label="Nationality" hint="Country of citizenship — affects visa & fee category."><input className={inputCls} value={value.nationality ?? ""} onChange={(e) => upd("nationality", e.target.value)} /></Field>
+          <Field label="Phone" hint="Include country code, e.g. +91 98xxxxxx."><input className={inputCls} value={value.phone ?? ""} onChange={(e) => upd("phone", e.target.value)} /></Field>
+          <Field label="City" hint="City where you currently live."><input className={inputCls} value={value.city ?? ""} onChange={(e) => upd("city", e.target.value)} /></Field>
+          <Field label="Country" hint="Country where you currently live."><input className={inputCls} value={value.country ?? ""} onChange={(e) => upd("country", e.target.value)} /></Field>
+          <Field label="Parent / Guardian name" hint="Primary contact parent or guardian."><input className={inputCls} value={value.parent_name ?? ""} onChange={(e) => upd("parent_name", e.target.value)} /></Field>
+          <Field label="Parent email" hint="Universities sometimes copy parents on correspondence."><input type="email" className={inputCls} value={value.parent_email ?? ""} onChange={(e) => upd("parent_email", e.target.value)} /></Field>
+          <Field label="Parent phone" hint="Include country code."><input className={inputCls} value={value.parent_phone ?? ""} onChange={(e) => upd("parent_phone", e.target.value)} /></Field>
         </div>
       </SectionCard>
     );
@@ -322,17 +322,17 @@ function SectionForm({ sectionKey, value, onChange }: { sectionKey: SectionKey; 
     return (
       <SectionCard title="Academics" desc="Your school and grade record.">
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <Field label="School name"><input className={inputCls} value={value.school_name ?? ""} onChange={(e) => upd("school_name", e.target.value)} /></Field>
-          <Field label="Curriculum (IB / AP / CBSE / A-Levels)"><input className={inputCls} value={value.curriculum ?? ""} onChange={(e) => upd("curriculum", e.target.value)} /></Field>
-          <Field label="Current grade"><input className={inputCls} value={value.grade ?? ""} onChange={(e) => upd("grade", e.target.value)} /></Field>
-          <Field label="Graduation year"><input className={inputCls} value={value.graduation_year ?? ""} onChange={(e) => upd("graduation_year", e.target.value)} /></Field>
-          <Field label="GPA / Average"><input className={inputCls} value={value.gpa ?? ""} onChange={(e) => upd("gpa", e.target.value)} /></Field>
-          <Field label="GPA scale (4.0 / 100 / 10)"><input className={inputCls} value={value.gpa_scale ?? ""} onChange={(e) => upd("gpa_scale", e.target.value)} /></Field>
-          <Field label="Class rank"><input className={inputCls} value={value.class_rank ?? ""} onChange={(e) => upd("class_rank", e.target.value)} /></Field>
+          <Field label="School name" hint="Full official name of your current/most recent school."><input className={inputCls} value={value.school_name ?? ""} onChange={(e) => upd("school_name", e.target.value)} /></Field>
+          <Field label="Curriculum (IB / AP / CBSE / A-Levels)" hint="Your board / curriculum — IB, AP, CBSE, ICSE, A-Levels, etc."><input className={inputCls} value={value.curriculum ?? ""} onChange={(e) => upd("curriculum", e.target.value)} /></Field>
+          <Field label="Current grade" hint="E.g. Grade 11, Year 12."><input className={inputCls} value={value.grade ?? ""} onChange={(e) => upd("grade", e.target.value)} /></Field>
+          <Field label="Graduation year" hint="Year you will finish high school."><input className={inputCls} value={value.graduation_year ?? ""} onChange={(e) => upd("graduation_year", e.target.value)} /></Field>
+          <Field label="GPA / Average" hint="Your cumulative grade average."><input className={inputCls} value={value.gpa ?? ""} onChange={(e) => upd("gpa", e.target.value)} /></Field>
+          <Field label="GPA scale (4.0 / 100 / 10)" hint="The maximum on your school's grading scale."><input className={inputCls} value={value.gpa_scale ?? ""} onChange={(e) => upd("gpa_scale", e.target.value)} /></Field>
+          <Field label="Class rank" hint="E.g. 5/120 — leave blank if your school doesn't rank."><input className={inputCls} value={value.class_rank ?? ""} onChange={(e) => upd("class_rank", e.target.value)} /></Field>
         </div>
         <div className="mt-4 space-y-4">
-          <Field label="Honors / advanced courses"><textarea rows={3} className={inputCls} value={value.honors_courses ?? ""} onChange={(e) => upd("honors_courses", e.target.value)} /></Field>
-          <Field label="Subjects you're strongest in"><textarea rows={3} className={inputCls} value={value.notable_subjects ?? ""} onChange={(e) => upd("notable_subjects", e.target.value)} /></Field>
+          <Field label="Honors / advanced courses" hint="List honors, AP, IB HL, or advanced electives you've taken."><textarea rows={3} className={inputCls} value={value.honors_courses ?? ""} onChange={(e) => upd("honors_courses", e.target.value)} /></Field>
+          <Field label="Subjects you're strongest in" hint="Subjects where you consistently score highest or enjoy most."><textarea rows={3} className={inputCls} value={value.notable_subjects ?? ""} onChange={(e) => upd("notable_subjects", e.target.value)} /></Field>
         </div>
       </SectionCard>
     );
@@ -341,17 +341,17 @@ function SectionForm({ sectionKey, value, onChange }: { sectionKey: SectionKey; 
     return (
       <SectionCard title="Standardized testing" desc="Add what you have — leave the rest blank.">
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          <Field label="SAT total"><input className={inputCls} value={value.sat_total ?? ""} onChange={(e) => upd("sat_total", e.target.value)} /></Field>
-          <Field label="SAT Math"><input className={inputCls} value={value.sat_math ?? ""} onChange={(e) => upd("sat_math", e.target.value)} /></Field>
-          <Field label="SAT EBRW"><input className={inputCls} value={value.sat_ebrw ?? ""} onChange={(e) => upd("sat_ebrw", e.target.value)} /></Field>
-          <Field label="ACT"><input className={inputCls} value={value.act ?? ""} onChange={(e) => upd("act", e.target.value)} /></Field>
-          <Field label="TOEFL"><input className={inputCls} value={value.toefl ?? ""} onChange={(e) => upd("toefl", e.target.value)} /></Field>
-          <Field label="IELTS"><input className={inputCls} value={value.ielts ?? ""} onChange={(e) => upd("ielts", e.target.value)} /></Field>
-          <Field label="Duolingo"><input className={inputCls} value={value.duolingo ?? ""} onChange={(e) => upd("duolingo", e.target.value)} /></Field>
+          <Field label="SAT total" hint="Your highest total SAT score (out of 1600)."><input className={inputCls} value={value.sat_total ?? ""} onChange={(e) => upd("sat_total", e.target.value)} /></Field>
+          <Field label="SAT Math" hint="SAT Math section score (out of 800)."><input className={inputCls} value={value.sat_math ?? ""} onChange={(e) => upd("sat_math", e.target.value)} /></Field>
+          <Field label="SAT EBRW" hint="SAT Evidence-Based Reading & Writing score (out of 800)."><input className={inputCls} value={value.sat_ebrw ?? ""} onChange={(e) => upd("sat_ebrw", e.target.value)} /></Field>
+          <Field label="ACT" hint="Composite ACT score (out of 36)."><input className={inputCls} value={value.act ?? ""} onChange={(e) => upd("act", e.target.value)} /></Field>
+          <Field label="TOEFL" hint="TOEFL iBT total score (out of 120)."><input className={inputCls} value={value.toefl ?? ""} onChange={(e) => upd("toefl", e.target.value)} /></Field>
+          <Field label="IELTS" hint="IELTS overall band (out of 9)."><input className={inputCls} value={value.ielts ?? ""} onChange={(e) => upd("ielts", e.target.value)} /></Field>
+          <Field label="Duolingo" hint="Duolingo English Test score (out of 160)."><input className={inputCls} value={value.duolingo ?? ""} onChange={(e) => upd("duolingo", e.target.value)} /></Field>
         </div>
         <div className="mt-4 space-y-4">
-          <Field label="AP scores (e.g. Calc BC: 5, Bio: 4)"><textarea rows={2} className={inputCls} value={value.ap_scores ?? ""} onChange={(e) => upd("ap_scores", e.target.value)} /></Field>
-          <Field label="Other tests / olympiads"><textarea rows={2} className={inputCls} value={value.other_tests ?? ""} onChange={(e) => upd("other_tests", e.target.value)} /></Field>
+          <Field label="AP scores (e.g. Calc BC: 5, Bio: 4)" hint="List each AP subject with its score, one per line if possible."><textarea rows={2} className={inputCls} value={value.ap_scores ?? ""} onChange={(e) => upd("ap_scores", e.target.value)} /></Field>
+          <Field label="Other tests / olympiads" hint="Olympiads, SAT subject tests, national exams, etc."><textarea rows={2} className={inputCls} value={value.other_tests ?? ""} onChange={(e) => upd("other_tests", e.target.value)} /></Field>
         </div>
       </SectionCard>
     );
@@ -375,15 +375,15 @@ function SectionForm({ sectionKey, value, onChange }: { sectionKey: SectionKey; 
                 </button>
               </div>
               <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <Field label="Activity name"><input className={inputCls} value={a.name ?? ""} onChange={(e) => updateItem(i, "name", e.target.value)} /></Field>
-                <Field label="Your role"><input className={inputCls} value={a.role ?? ""} onChange={(e) => updateItem(i, "role", e.target.value)} /></Field>
-                <Field label="Category"><input className={inputCls} value={a.category ?? ""} onChange={(e) => updateItem(i, "category", e.target.value)} /></Field>
-                <Field label="Grades (e.g. 9,10,11)"><input className={inputCls} value={a.grades ?? ""} onChange={(e) => updateItem(i, "grades", e.target.value)} /></Field>
-                <Field label="Hours / week"><input className={inputCls} value={a.hours_per_week ?? ""} onChange={(e) => updateItem(i, "hours_per_week", e.target.value)} /></Field>
-                <Field label="Weeks / year"><input className={inputCls} value={a.weeks_per_year ?? ""} onChange={(e) => updateItem(i, "weeks_per_year", e.target.value)} /></Field>
+                <Field label="Activity name" hint="Name of the club, sport, job, project, or program."><input className={inputCls} value={a.name ?? ""} onChange={(e) => updateItem(i, "name", e.target.value)} /></Field>
+                <Field label="Your role" hint="E.g. President, Member, Captain, Intern, Founder."><input className={inputCls} value={a.role ?? ""} onChange={(e) => updateItem(i, "role", e.target.value)} /></Field>
+                <Field label="Category" hint="Super-curricular, Co-curricular, Extra-curricular, Volunteering, Academic."><input className={inputCls} value={a.category ?? ""} onChange={(e) => updateItem(i, "category", e.target.value)} /></Field>
+                <Field label="Grades (e.g. 9,10,11)" hint="Which school years you participated."><input className={inputCls} value={a.grades ?? ""} onChange={(e) => updateItem(i, "grades", e.target.value)} /></Field>
+                <Field label="Hours / week" hint="Average hours per week spent on this activity."><input className={inputCls} value={a.hours_per_week ?? ""} onChange={(e) => updateItem(i, "hours_per_week", e.target.value)} /></Field>
+                <Field label="Weeks / year" hint="Number of weeks per year you do this activity."><input className={inputCls} value={a.weeks_per_year ?? ""} onChange={(e) => updateItem(i, "weeks_per_year", e.target.value)} /></Field>
               </div>
               <div className="mt-3">
-                <Field label="Describe what you did and the impact"><textarea rows={3} className={inputCls} value={a.description ?? ""} onChange={(e) => updateItem(i, "description", e.target.value)} /></Field>
+                <Field label="Describe what you did and the impact" hint="Focus on outcomes, leadership, recognitions, and measurable impact."><textarea rows={3} className={inputCls} value={a.description ?? ""} onChange={(e) => updateItem(i, "description", e.target.value)} /></Field>
               </div>
             </div>
           ))}
@@ -401,9 +401,9 @@ function SectionForm({ sectionKey, value, onChange }: { sectionKey: SectionKey; 
     return (
       <SectionCard title="Essays" desc="Drop your drafts — your advisor will review them.">
         <div className="space-y-4">
-          <Field label="Common App / personal statement (650 words)"><textarea rows={8} className={inputCls} value={value.common_essay ?? ""} onChange={(e) => upd("common_essay", e.target.value)} /></Field>
-          <Field label="Why this university / Why this major"><textarea rows={5} className={inputCls} value={value.why_us ?? ""} onChange={(e) => upd("why_us", e.target.value)} /></Field>
-          <Field label="Anything else you want your advisor to know"><textarea rows={4} className={inputCls} value={value.additional_info ?? ""} onChange={(e) => upd("additional_info", e.target.value)} /></Field>
+          <Field label="Common App / personal statement (650 words)" hint="A personal essay that shows who you are beyond grades — story, voice, growth."><textarea rows={8} className={inputCls} value={value.common_essay ?? ""} onChange={(e) => upd("common_essay", e.target.value)} /></Field>
+          <Field label="Why this university / Why this major" hint="Be specific: programs, faculty, opportunities — avoid generic statements."><textarea rows={5} className={inputCls} value={value.why_us ?? ""} onChange={(e) => upd("why_us", e.target.value)} /></Field>
+          <Field label="Anything else you want your advisor to know" hint="Context that doesn't fit elsewhere — challenges, gaps, plans."><textarea rows={4} className={inputCls} value={value.additional_info ?? ""} onChange={(e) => upd("additional_info", e.target.value)} /></Field>
         </div>
       </SectionCard>
     );
@@ -427,10 +427,10 @@ function SectionForm({ sectionKey, value, onChange }: { sectionKey: SectionKey; 
                 </button>
               </div>
               <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <Field label="Name"><input className={inputCls} value={r.recommender_name ?? ""} onChange={(e) => updateItem(i, "recommender_name", e.target.value)} /></Field>
-                <Field label="Role / Subject"><input className={inputCls} value={r.recommender_role ?? ""} onChange={(e) => updateItem(i, "recommender_role", e.target.value)} /></Field>
-                <Field label="Email"><input type="email" className={inputCls} value={r.recommender_email ?? ""} onChange={(e) => updateItem(i, "recommender_email", e.target.value)} /></Field>
-                <Field label="Relationship to you"><input className={inputCls} value={r.relationship ?? ""} onChange={(e) => updateItem(i, "relationship", e.target.value)} /></Field>
+                <Field label="Name" hint="Full name of your recommender."><input className={inputCls} value={r.recommender_name ?? ""} onChange={(e) => updateItem(i, "recommender_name", e.target.value)} /></Field>
+                <Field label="Role / Subject" hint="E.g. Math Teacher, School Counselor, Research Mentor."><input className={inputCls} value={r.recommender_role ?? ""} onChange={(e) => updateItem(i, "recommender_role", e.target.value)} /></Field>
+                <Field label="Email" hint="Official school or work email is strongly preferred."><input type="email" className={inputCls} value={r.recommender_email ?? ""} onChange={(e) => updateItem(i, "recommender_email", e.target.value)} /></Field>
+                <Field label="Relationship to you" hint="How long they've known you and in what capacity."><input className={inputCls} value={r.relationship ?? ""} onChange={(e) => updateItem(i, "relationship", e.target.value)} /></Field>
               </div>
             </div>
           ))}
@@ -448,11 +448,11 @@ function SectionForm({ sectionKey, value, onChange }: { sectionKey: SectionKey; 
   return (
     <SectionCard title="Preferences" desc="Where you want to go and what you want to study.">
       <div className="space-y-4">
-        <Field label="Intended major(s)"><input className={inputCls} value={value.intended_majors ?? ""} onChange={(e) => upd("intended_majors", e.target.value)} /></Field>
-        <Field label="Preferred countries"><input className={inputCls} value={value.preferred_countries ?? ""} onChange={(e) => upd("preferred_countries", e.target.value)} /></Field>
-        <Field label="Budget range (USD/year)"><input className={inputCls} value={value.budget_range ?? ""} onChange={(e) => upd("budget_range", e.target.value)} /></Field>
-        <Field label="Universities you're already considering"><textarea rows={4} className={inputCls} value={value.university_list ?? ""} onChange={(e) => upd("university_list", e.target.value)} /></Field>
-        <Field label="Notes for your advisor"><textarea rows={4} className={inputCls} value={value.notes ?? ""} onChange={(e) => upd("notes", e.target.value)} /></Field>
+        <Field label="Intended major(s)" hint="Top 1-3 fields you want to study."><input className={inputCls} value={value.intended_majors ?? ""} onChange={(e) => upd("intended_majors", e.target.value)} /></Field>
+        <Field label="Preferred countries" hint="E.g. USA, UK, Canada, Singapore, Netherlands."><input className={inputCls} value={value.preferred_countries ?? ""} onChange={(e) => upd("preferred_countries", e.target.value)} /></Field>
+        <Field label="Budget range (USD/year)" hint="Total annual budget for tuition + living."><input className={inputCls} value={value.budget_range ?? ""} onChange={(e) => upd("budget_range", e.target.value)} /></Field>
+        <Field label="Universities you're already considering" hint="Comma-separated list — we'll add reach/target/safe matches around it."><textarea rows={4} className={inputCls} value={value.university_list ?? ""} onChange={(e) => upd("university_list", e.target.value)} /></Field>
+        <Field label="Notes for your advisor" hint="Anything else your advisor should know — preferences, constraints, deadlines."><textarea rows={4} className={inputCls} value={value.notes ?? ""} onChange={(e) => upd("notes", e.target.value)} /></Field>
       </div>
     </SectionCard>
   );
