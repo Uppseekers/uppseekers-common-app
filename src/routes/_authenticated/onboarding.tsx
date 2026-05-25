@@ -2,9 +2,9 @@ import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { motion } from "framer-motion";
-import { Check, ChevronRight, GraduationCap, Loader2, LogOut, Plus, Send, Trash2 } from "lucide-react";
+import { Check, ChevronRight, GraduationCap, Info, Loader2, LogOut, Plus, RotateCw, Send, Trash2 } from "lucide-react";
 import { toast } from "sonner";
-import { getMyProfile, saveSection, submitProfile } from "@/lib/onboarding.functions";
+import { getMyProfile, saveSection, submitProfile, startRetry } from "@/lib/onboarding.functions";
 import { SECTION_KEYS, type SectionKey } from "@/lib/onboarding-schema";
 import { useAuth } from "@/hooks/useAuth";
 
