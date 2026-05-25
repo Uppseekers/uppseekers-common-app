@@ -3,7 +3,6 @@ import { GraduationCap, ArrowLeft, Loader2 } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
-import { lovable } from "@/integrations/lovable";
 
 export const Route = createFileRoute("/signin")({
   head: () => ({ meta: [{ title: "Sign in — Uppseekers" }] }),
@@ -21,7 +20,10 @@ function SignIn() {
     setLoading(true);
     try {
       const { error } = await supabase.auth.signInWithPassword({ email, password });
-      if (error) return toast.error(error.message);
+      if (error) {
+        toast.error(error.message);
+        return;
+      }
       toast.success("Welcome back");
       await nav({ to: "/onboarding" });
     } catch (error) {
@@ -29,13 +31,6 @@ function SignIn() {
     } finally {
       setLoading(false);
     }
-  };
-
-  const handleGoogle = async () => {
-    setLoading(true);
-    const res = await lovable.auth.signInWithOAuth("google", { redirect_uri: window.location.origin + "/onboarding" });
-    if (res.error) toast.error(res.error.message);
-    setLoading(false);
   };
 
   return (
@@ -65,17 +60,10 @@ function SignIn() {
           </button>
         </form>
 
-        <div className="my-5 flex items-center gap-3 text-[10px] uppercase tracking-wider text-muted-foreground">
-          <span className="h-px flex-1 bg-border" /> or <span className="h-px flex-1 bg-border" />
+        <div className="mt-4 flex justify-between text-xs">
+          <Link to="/forgot-password" className="text-muted-foreground hover:text-foreground">Forgot password?</Link>
+          <Link to="/signup" className="text-muted-foreground hover:text-foreground">Create account</Link>
         </div>
-
-        <button onClick={handleGoogle} className="w-full rounded-xl border border-border bg-card py-2.5 text-sm font-medium hover:bg-accent transition">
-          Continue with Google
-        </button>
-
-        <p className="mt-6 text-center text-xs text-muted-foreground">
-          New here? <Link to="/signup" className="text-foreground hover:underline">Create an account</Link>
-        </p>
       </div>
     </div>
   );
