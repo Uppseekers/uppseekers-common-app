@@ -267,10 +267,20 @@ function Submitted({ email, onRetry }: { email: string; onRetry: () => Promise<v
 
 /* --------------------------- Section forms --------------------------- */
 
-function Field({ label, children }: { label: string; children: React.ReactNode }) {
+function Field({ label, hint, children }: { label: string; hint?: string; children: React.ReactNode }) {
   return (
     <label className="block">
-      <span className="block text-xs font-medium text-muted-foreground mb-1.5">{label}</span>
+      <span className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground mb-1.5">
+        {label}
+        {hint && (
+          <span className="relative inline-flex group">
+            <Info className="h-3.5 w-3.5 text-muted-foreground/70 cursor-help" />
+            <span className="pointer-events-none absolute left-1/2 -translate-x-1/2 bottom-full mb-2 z-20 hidden group-hover:block w-64 rounded-lg bg-popover text-popover-foreground border border-border px-3 py-2 text-[11px] leading-relaxed shadow-elegant normal-case">
+              {hint}
+            </span>
+          </span>
+        )}
+      </span>
       {children}
     </label>
   );
