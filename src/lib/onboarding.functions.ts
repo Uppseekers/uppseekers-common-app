@@ -286,25 +286,26 @@ export const submitProfile = createServerFn({ method: "POST" })
       .single();
     if (error || !profile) throw new Error(error?.message ?? "Profile not found");
 
-    if (profile.status === "submitted") {
-      return { ok: true, emailSent: false, alreadySubmitted: true };
-    }
-
-    // Atomically claim the submission slot — only one concurrent request wins.
-    const submittedAt = new Date().toISOString();
-    const { data: claimed, error: claimError } = await supabase
-      .from("applicant_profiles")
-      .update({ status: "submitted", submitted_at: submittedAt })
-      .eq("user_id", userId)
-      .neq("status", "submitted")
-      .select("user_id");
-    if (claimError) throw new Error(claimError.message);
-    if (!claimed || claimed.length === 0) {
-      return { ok: true, emailSent: false, alreadySubmitted: true };
-    }
-
     const { data: userInfo } = await supabaseAdmin.auth.admin.getUserById(userId);
     const email = userInfo.user?.email ?? "unknown";
+    const unlimited = isUnlimitedEmail(email);
+
+    // Rate limit: non-uppseekers emails get 1 submission per week
+    if (!unlimited && profile.submitted_at) {
+      const elapsed = Date.now() - new Date(profile.submitted_at).getTime();
+      if (elapsed < RETRY_COOLDOWN_MS) {
+        const nextAt = new Date(new Date(profile.submitted_at).getTime() + RETRY_COOLDOWN_MS);
+        throw new Error(`You can only submit once a week. Next submission available ${nextAt.toLocaleDateString()}.`);
+      }
+    }
+
+    const submittedAt = new Date().toISOString();
+    const { error: claimError } = await supabase
+      .from("applicant_profiles")
+      .update({ status: "submitted", submitted_at: submittedAt })
+      .eq("user_id", userId);
+    if (claimError) throw new Error(claimError.message);
+
     const personal = (profile.personal ?? {}) as { full_name?: string };
     const fullName =
       personal.full_name ||
