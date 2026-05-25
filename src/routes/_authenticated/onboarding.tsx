@@ -225,7 +225,9 @@ function Onboarding() {
   );
 }
 
-function Submitted() {
+function Submitted({ email, onRetry }: { email: string; onRetry: () => Promise<void> }) {
+  const [retrying, setRetrying] = useState(false);
+  const unlimited = email.toLowerCase().endsWith("@uppseekers.com");
   return (
     <div className="min-h-screen flex items-center justify-center px-6 py-16 relative overflow-hidden">
       <div aria-hidden className="absolute inset-0 -z-10 opacity-50 blur-3xl" style={{ background: "radial-gradient(50% 50% at 50% 0%, oklch(0.7 0.2 265 / 0.35), transparent 70%)" }} />
@@ -245,9 +247,19 @@ function Submitted() {
           The report will soon be shared with your Uppseekers advisor for a personalized summary and path discussion.
           You'll hear from us at the email you signed up with.
         </p>
-        <Link to="/" className="mt-7 inline-flex items-center gap-1 text-sm text-foreground hover:underline">
-          Back to home
-        </Link>
+        <p className="mt-4 text-xs text-muted-foreground">
+          Want to update your answers? {unlimited ? "You have unlimited retries." : "You can retry once a week."}
+        </p>
+        <div className="mt-6 flex items-center justify-center gap-3">
+          <button
+            onClick={async () => { setRetrying(true); await onRetry(); setRetrying(false); }}
+            disabled={retrying}
+            className="inline-flex items-center gap-2 rounded-full bg-foreground text-background px-5 py-2.5 text-sm font-medium hover:opacity-90 transition disabled:opacity-60"
+          >
+            {retrying ? <Loader2 className="h-4 w-4 animate-spin" /> : <RotateCw className="h-4 w-4" />} Retry & improve
+          </button>
+          <Link to="/" className="text-sm text-muted-foreground hover:text-foreground">Back to home</Link>
+        </div>
       </motion.div>
     </div>
   );
