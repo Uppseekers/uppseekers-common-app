@@ -2,9 +2,9 @@ import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { motion } from "framer-motion";
-import { Check, ChevronRight, GraduationCap, Info, Loader2, LogOut, Plus, RotateCw, Send, Trash2 } from "lucide-react";
+import { CheckCircle2, Check, ChevronRight, Download, GraduationCap, Info, Loader2, LogOut, Plus, RotateCw, Send, Trash2 } from "lucide-react";
 import { toast } from "sonner";
-import { getMyProfile, saveSection, submitProfile, startRetry } from "@/lib/onboarding.functions";
+import { getMyProfile, saveSection, submitProfile, startRetry, downloadReportPdf } from "@/lib/onboarding.functions";
 import { SECTION_KEYS, type SectionKey } from "@/lib/onboarding-schema";
 import { useAuth } from "@/hooks/useAuth";
 
@@ -24,6 +24,57 @@ const SECTIONS: { key: SectionKey; label: string; desc: string }[] = [
 ];
 
 type State = Record<SectionKey, any>;
+type Errors = Record<string, string>;
+
+/** Validate one section. Returns { ok, errors } where errors keys map to field names. */
+function validateSection(key: SectionKey, value: any): { ok: boolean; errors: Errors } {
+  const errors: Errors = {};
+  const req = (k: string, label: string) => {
+    const v = value?.[k];
+    if (!v || !String(v).trim()) errors[k] = `${label} is required`;
+  };
+  if (key === "personal") {
+    req("full_name", "Full name");
+    req("phone", "Phone");
+    req("parent_name", "Parent / Guardian name");
+    if (!value?.parent_phone || String(value.parent_phone).trim().length < 5)
+      errors.parent_phone = "Parent's phone is required";
+    if (value?.parent_email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(value.parent_email)))
+      errors.parent_email = "Enter a valid email";
+  } else if (key === "academics") {
+    req("school_name", "School name");
+    req("curriculum", "Curriculum");
+    req("grade", "Grade");
+    req("graduation_year", "Graduation year");
+    req("gpa", "GPA");
+    req("gpa_scale", "GPA scale");
+  } else if (key === "activities") {
+    const list: any[] = Array.isArray(value) ? value : [];
+    if (list.length === 0) errors._list = "Add at least one activity";
+    list.forEach((a, i) => {
+      if (!a?.name || !String(a.name).trim()) errors[`name_${i}`] = "Activity name is required";
+    });
+  } else if (key === "essays") {
+    if (!value?.common_essay || String(value.common_essay).trim().length < 100)
+      errors.common_essay = "Personal statement should be at least 100 characters";
+    if (!value?.why_us || String(value.why_us).trim().length < 50)
+      errors.why_us = "Tell us why this university / major (50+ characters)";
+  } else if (key === "recommendations") {
+    const list: any[] = Array.isArray(value) ? value : [];
+    if (list.length === 0) errors._list = "Add at least one recommender";
+    list.forEach((r, i) => {
+      if (!r?.recommender_name) errors[`recommender_name_${i}`] = "Name is required";
+      if (!r?.recommender_email) errors[`recommender_email_${i}`] = "Email is required";
+      else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(r.recommender_email)))
+        errors[`recommender_email_${i}`] = "Enter a valid email";
+    });
+  } else if (key === "preferences") {
+    req("intended_majors", "Intended major");
+    req("preferred_countries", "Preferred countries");
+    req("university_list", "University list");
+  }
+  return { ok: Object.keys(errors).length === 0, errors };
+}
 
 function Onboarding() {
   const { user, signOut } = useAuth();
@@ -32,9 +83,11 @@ function Onboarding() {
   const save = useServerFn(saveSection);
   const submit = useServerFn(submitProfile);
   const retry = useServerFn(startRetry);
+  const downloadPdf = useServerFn(downloadReportPdf);
 
   const [active, setActive] = useState<SectionKey>("personal");
   const [state, setState] = useState<State | null>(null);
+  const [errors, setErrors] = useState<Errors>({});
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
@@ -69,27 +122,45 @@ function Onboarding() {
 
   const updateSection = (key: SectionKey, data: any) => {
     setState((s) => (s ? { ...s, [key]: data } : s));
+    setErrors({}); // clear errors as user types
     if (saveTimer.current) clearTimeout(saveTimer.current);
     saveTimer.current = setTimeout(() => {
-      save({ data: { section: key, data } }).catch((e) => toast.error(e.message));
+      save({ data: { section: key, data } }).catch(() => {/* validation errors silently — surfaced on continue */});
     }, 700);
   };
 
+  const goNext = () => {
+    if (!state) return;
+    const result = validateSection(active, state[active]);
+    if (!result.ok) {
+      setErrors(result.errors);
+      toast.error("Please fix the highlighted fields before continuing.");
+      return;
+    }
+    setErrors({});
+    const idx = SECTIONS.findIndex((s) => s.key === active);
+    if (idx < SECTIONS.length - 1) setActive(SECTIONS[idx + 1].key);
+  };
+
   const handleSubmit = async () => {
+    if (!state) return;
+    // Validate every section before submitting
+    for (const s of SECTIONS) {
+      const r = validateSection(s.key, state[s.key]);
+      if (!r.ok) {
+        setActive(s.key);
+        setErrors(r.errors);
+        toast.error(`Please complete the ${s.label} section first.`);
+        return;
+      }
+    }
     setSubmitting(true);
     try {
-      // flush pending save
       if (saveTimer.current) clearTimeout(saveTimer.current);
-      if (state) {
-        await Promise.all(
-          SECTION_KEYS.map((k) => save({ data: { section: k, data: state[k] } })),
-        );
-      }
+      await Promise.all(SECTION_KEYS.map((k) => save({ data: { section: k, data: state[k] } })));
       const res = await submit({});
       setSubmitted(true);
-      if (!res.emailSent) {
-        toast.info("Profile saved. Advisor email delivery is pending setup.");
-      }
+      if (!res.emailSent) toast.info("Profile saved. Advisor email delivery is pending setup.");
     } catch (e: any) {
       toast.error(e.message);
     } finally {
@@ -106,20 +177,32 @@ function Onboarding() {
   }
 
   if (submitted) {
-    return <Submitted email={user?.email ?? ""} onRetry={async () => {
-      try {
-        await retry({});
-        setSubmitted(false);
-        toast.success("You can now edit and resubmit.");
-      } catch (e: any) {
-        toast.error(e.message);
-      }
-    }} />;
+    return <Submitted
+      email={user?.email ?? ""}
+      onRetry={async () => {
+        try {
+          await retry({});
+          setSubmitted(false);
+          toast.success("You can now edit and resubmit.");
+        } catch (e: any) {
+          toast.error(e.message);
+        }
+      }}
+      onDownload={async () => {
+        try {
+          const { pdfBase64 } = await downloadPdf({});
+          if (!pdfBase64) { toast.error("Report still generating — try again in a moment."); return; }
+          downloadBase64Pdf(pdfBase64, "uppseekers-profile-report.pdf");
+        } catch (e: any) { toast.error(e.message); }
+      }}
+    />;
   }
+
+  const activeIdx = SECTIONS.findIndex((s) => s.key === active);
+  const isLast = activeIdx === SECTIONS.length - 1;
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Top bar */}
       <header className="sticky top-0 z-30 border-b border-border bg-background/80 backdrop-blur">
         <div className="mx-auto max-w-7xl px-6 py-3 flex items-center justify-between">
           <Link to="/" className="flex items-center gap-2">
@@ -140,7 +223,6 @@ function Onboarding() {
       </header>
 
       <div className="mx-auto max-w-7xl px-6 py-10 grid grid-cols-1 lg:grid-cols-[280px_1fr] gap-10">
-        {/* Sidebar */}
         <aside className="lg:sticky lg:top-20 self-start">
           <div className="rounded-2xl border border-border bg-card p-4">
             <p className="text-xs text-muted-foreground">Application progress</p>
@@ -179,45 +261,43 @@ function Onboarding() {
               );
             })}
           </nav>
-
-          <button
-            onClick={handleSubmit}
-            disabled={submitting}
-            className="mt-5 w-full inline-flex items-center justify-center gap-2 rounded-xl bg-foreground text-background py-2.5 text-sm font-medium hover:opacity-90 transition disabled:opacity-60"
-          >
-            {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
-            Submit to my advisor
-          </button>
-          <p className="mt-2 text-[11px] text-muted-foreground text-center">Auto-saves as you type.</p>
+          <p className="mt-4 text-[11px] text-muted-foreground text-center">Auto-saves as you type.</p>
         </aside>
 
-        {/* Form */}
-        <motion.main
-          key={active}
-          initial={{ opacity: 0, y: 8 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.25 }}
-        >
-          <SectionForm sectionKey={active} value={state[active]} onChange={(d) => updateSection(active, d)} />
-          <div className="mt-6 flex justify-between">
+        <motion.main key={active} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.25 }}>
+          <SectionForm sectionKey={active} value={state[active]} errors={errors} onChange={(d) => updateSection(active, d)} />
+
+          {errors._list && (
+            <p className="mt-3 text-sm text-destructive">{errors._list}</p>
+          )}
+
+          <div className="mt-6 flex justify-between items-center gap-4">
             <button
               onClick={() => {
                 const idx = SECTIONS.findIndex((s) => s.key === active);
-                if (idx > 0) setActive(SECTIONS[idx - 1].key);
+                if (idx > 0) { setErrors({}); setActive(SECTIONS[idx - 1].key); }
               }}
               className="text-sm text-muted-foreground hover:text-foreground"
             >
               ← Back
             </button>
-            <button
-              onClick={() => {
-                const idx = SECTIONS.findIndex((s) => s.key === active);
-                if (idx < SECTIONS.length - 1) setActive(SECTIONS[idx + 1].key);
-              }}
-              className="inline-flex items-center gap-1 rounded-full bg-accent text-accent-foreground px-4 py-2 text-sm font-medium"
-            >
-              Continue <ChevronRight className="h-4 w-4" />
-            </button>
+            {isLast ? (
+              <button
+                onClick={handleSubmit}
+                disabled={submitting}
+                className="inline-flex items-center gap-2 rounded-full bg-gradient-primary text-primary-foreground px-6 py-3 text-sm font-semibold shadow-glow hover:opacity-95 transition disabled:opacity-60"
+              >
+                {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+                Submit to Ex-Admission Reviewers
+              </button>
+            ) : (
+              <button
+                onClick={goNext}
+                className="inline-flex items-center gap-1 rounded-full bg-accent text-accent-foreground px-4 py-2 text-sm font-medium"
+              >
+                Continue <ChevronRight className="h-4 w-4" />
+              </button>
+            )}
           </div>
         </motion.main>
       </div>
@@ -225,8 +305,20 @@ function Onboarding() {
   );
 }
 
-function Submitted({ email, onRetry }: { email: string; onRetry: () => Promise<void> }) {
+function downloadBase64Pdf(b64: string, filename: string) {
+  const bin = atob(b64);
+  const arr = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) arr[i] = bin.charCodeAt(i);
+  const blob = new Blob([arr], { type: "application/pdf" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url; a.download = filename; document.body.appendChild(a); a.click();
+  setTimeout(() => { URL.revokeObjectURL(url); a.remove(); }, 200);
+}
+
+function Submitted({ email, onRetry, onDownload }: { email: string; onRetry: () => Promise<void>; onDownload: () => Promise<void> }) {
   const [retrying, setRetrying] = useState(false);
+  const [downloading, setDownloading] = useState(false);
   const unlimited = email.toLowerCase().endsWith("@uppseekers.com");
   return (
     <div className="min-h-screen flex items-center justify-center px-6 py-16 relative overflow-hidden">
@@ -238,27 +330,38 @@ function Submitted({ email, onRetry }: { email: string; onRetry: () => Promise<v
         className="w-full max-w-xl glass rounded-3xl p-10 shadow-elegant text-center"
       >
         <div className="mx-auto h-14 w-14 rounded-2xl bg-gradient-primary flex items-center justify-center shadow-glow">
-          <motion.div animate={{ rotate: 360 }} transition={{ duration: 4, repeat: Infinity, ease: "linear" }}>
-            <Loader2 className="h-6 w-6 text-primary-foreground" />
-          </motion.div>
+          <CheckCircle2 className="h-7 w-7 text-primary-foreground" />
         </div>
-        <h1 className="mt-6 font-display text-3xl tracking-tight">Our engine is working on your profile score.</h1>
+        <h1 className="mt-6 font-display text-4xl tracking-tight">Successfully submitted.</h1>
         <p className="mt-3 text-sm text-muted-foreground leading-relaxed">
-          The report will soon be shared with your Uppseekers advisor for a personalized summary and path discussion.
-          You'll hear from us at the email you signed up with.
+          Your profile has been shared with our ex-admission reviewers. You'll receive a personalized path discussion at <span className="text-foreground font-medium">{email}</span>.
         </p>
-        <p className="mt-4 text-xs text-muted-foreground">
-          Want to update your answers? {unlimited ? "You have unlimited retries." : "You can retry once a week."}
-        </p>
-        <div className="mt-6 flex items-center justify-center gap-3">
+
+        <div className="mt-6 flex flex-col sm:flex-row items-center justify-center gap-3">
           <button
-            onClick={async () => { setRetrying(true); await onRetry(); setRetrying(false); }}
-            disabled={retrying}
-            className="inline-flex items-center gap-2 rounded-full bg-foreground text-background px-5 py-2.5 text-sm font-medium hover:opacity-90 transition disabled:opacity-60"
+            onClick={async () => { setDownloading(true); await onDownload(); setDownloading(false); }}
+            disabled={downloading}
+            className="inline-flex items-center gap-2 rounded-full bg-gradient-primary text-primary-foreground px-5 py-2.5 text-sm font-medium shadow-glow hover:opacity-95 transition disabled:opacity-60"
           >
-            {retrying ? <Loader2 className="h-4 w-4 animate-spin" /> : <RotateCw className="h-4 w-4" />} Retry & improve
+            {downloading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />} Download PDF report
           </button>
-          <Link to="/" className="text-sm text-muted-foreground hover:text-foreground">Back to home</Link>
+
+          {unlimited ? (
+            <button
+              onClick={async () => { setRetrying(true); await onRetry(); setRetrying(false); }}
+              disabled={retrying}
+              className="inline-flex items-center gap-2 rounded-full border border-border bg-card px-5 py-2.5 text-sm font-medium hover:bg-muted transition disabled:opacity-60"
+            >
+              {retrying ? <Loader2 className="h-4 w-4 animate-spin" /> : <RotateCw className="h-4 w-4" />} Retry
+            </button>
+          ) : (
+            <div className="text-xs text-muted-foreground px-3 py-2 rounded-full bg-muted">
+              You can retry after 90 days.
+            </div>
+          )}
+        </div>
+        <div className="mt-5">
+          <Link to="/" className="text-xs text-muted-foreground hover:text-foreground">Back to home</Link>
         </div>
       </motion.div>
     </div>
@@ -267,7 +370,7 @@ function Submitted({ email, onRetry }: { email: string; onRetry: () => Promise<v
 
 /* --------------------------- Section forms --------------------------- */
 
-function Field({ label, hint, children }: { label: string; hint?: string; children: React.ReactNode }) {
+function Field({ label, hint, error, children }: { label: string; hint?: string; error?: string; children: React.ReactNode }) {
   return (
     <label className="block">
       <span className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground mb-1.5">
@@ -282,10 +385,12 @@ function Field({ label, hint, children }: { label: string; hint?: string; childr
         )}
       </span>
       {children}
+      {error && <span className="block mt-1 text-[11px] text-destructive">{error}</span>}
     </label>
   );
 }
-const inputCls = "w-full rounded-xl border border-border bg-background px-3.5 py-2.5 text-sm outline-none focus:ring-2 focus:ring-ring";
+const baseInput = "w-full rounded-xl border bg-background px-3.5 py-2.5 text-sm outline-none focus:ring-2 focus:ring-ring";
+const cls = (err?: string) => `${baseInput} ${err ? "border-destructive focus:ring-destructive" : "border-border"}`;
 
 function SectionCard({ title, desc, children }: { title: string; desc: string; children: React.ReactNode }) {
   return (
@@ -297,23 +402,24 @@ function SectionCard({ title, desc, children }: { title: string; desc: string; c
   );
 }
 
-function SectionForm({ sectionKey, value, onChange }: { sectionKey: SectionKey; value: any; onChange: (v: any) => void }) {
+function SectionForm({ sectionKey, value, errors, onChange }: { sectionKey: SectionKey; value: any; errors: Errors; onChange: (v: any) => void }) {
   const upd = (k: string, v: string) => onChange({ ...value, [k]: v });
+  const e = (k: string) => errors[k];
 
   if (sectionKey === "personal")
     return (
       <SectionCard title="Personal details" desc="Tell your advisor who they're working with.">
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <Field label="Full name" hint="As it appears on your passport / school records."><input className={inputCls} value={value.full_name ?? ""} onChange={(e) => upd("full_name", e.target.value)} /></Field>
-          <Field label="Date of birth" hint="Used by universities to verify age eligibility."><input type="date" className={inputCls} value={value.date_of_birth ?? ""} onChange={(e) => upd("date_of_birth", e.target.value)} /></Field>
-          <Field label="Gender" hint="Optional. Used only for demographic reporting."><input className={inputCls} value={value.gender ?? ""} onChange={(e) => upd("gender", e.target.value)} /></Field>
-          <Field label="Nationality" hint="Country of citizenship — affects visa & fee category."><input className={inputCls} value={value.nationality ?? ""} onChange={(e) => upd("nationality", e.target.value)} /></Field>
-          <Field label="Phone" hint="Include country code, e.g. +91 98xxxxxx."><input className={inputCls} value={value.phone ?? ""} onChange={(e) => upd("phone", e.target.value)} /></Field>
-          <Field label="City" hint="City where you currently live."><input className={inputCls} value={value.city ?? ""} onChange={(e) => upd("city", e.target.value)} /></Field>
-          <Field label="Country" hint="Country where you currently live."><input className={inputCls} value={value.country ?? ""} onChange={(e) => upd("country", e.target.value)} /></Field>
-          <Field label="Parent / Guardian name" hint="Primary contact parent or guardian."><input className={inputCls} value={value.parent_name ?? ""} onChange={(e) => upd("parent_name", e.target.value)} /></Field>
-          <Field label="Parent email" hint="Universities sometimes copy parents on correspondence."><input type="email" className={inputCls} value={value.parent_email ?? ""} onChange={(e) => upd("parent_email", e.target.value)} /></Field>
-          <Field label="Parent phone" hint="Include country code."><input className={inputCls} value={value.parent_phone ?? ""} onChange={(e) => upd("parent_phone", e.target.value)} /></Field>
+          <Field label="Full name *" hint="As it appears on your passport / school records." error={e("full_name")}><input className={cls(e("full_name"))} value={value.full_name ?? ""} onChange={(ev) => upd("full_name", ev.target.value)} /></Field>
+          <Field label="Date of birth" hint="Used by universities to verify age eligibility."><input type="date" className={cls()} value={value.date_of_birth ?? ""} onChange={(ev) => upd("date_of_birth", ev.target.value)} /></Field>
+          <Field label="Gender" hint="Optional. Used only for demographic reporting."><input className={cls()} value={value.gender ?? ""} onChange={(ev) => upd("gender", ev.target.value)} /></Field>
+          <Field label="Nationality" hint="Country of citizenship — affects visa & fee category."><input className={cls()} value={value.nationality ?? ""} onChange={(ev) => upd("nationality", ev.target.value)} /></Field>
+          <Field label="Phone *" hint="Include country code, e.g. +91 98xxxxxx." error={e("phone")}><input className={cls(e("phone"))} value={value.phone ?? ""} onChange={(ev) => upd("phone", ev.target.value)} /></Field>
+          <Field label="City" hint="City where you currently live."><input className={cls()} value={value.city ?? ""} onChange={(ev) => upd("city", ev.target.value)} /></Field>
+          <Field label="Country" hint="Country where you currently live."><input className={cls()} value={value.country ?? ""} onChange={(ev) => upd("country", ev.target.value)} /></Field>
+          <Field label="Parent / Guardian name *" hint="Primary contact parent or guardian." error={e("parent_name")}><input className={cls(e("parent_name"))} value={value.parent_name ?? ""} onChange={(ev) => upd("parent_name", ev.target.value)} /></Field>
+          <Field label="Parent email" hint="Universities sometimes copy parents on correspondence." error={e("parent_email")}><input type="email" className={cls(e("parent_email"))} value={value.parent_email ?? ""} onChange={(ev) => upd("parent_email", ev.target.value)} /></Field>
+          <Field label="Parent's phone *" hint="Mandatory. Include country code, e.g. +91 98xxxxxx." error={e("parent_phone")}><input className={cls(e("parent_phone"))} value={value.parent_phone ?? ""} onChange={(ev) => upd("parent_phone", ev.target.value)} /></Field>
         </div>
       </SectionCard>
     );
@@ -322,17 +428,17 @@ function SectionForm({ sectionKey, value, onChange }: { sectionKey: SectionKey; 
     return (
       <SectionCard title="Academics" desc="Your school and grade record.">
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <Field label="School name" hint="Full official name of your current/most recent school."><input className={inputCls} value={value.school_name ?? ""} onChange={(e) => upd("school_name", e.target.value)} /></Field>
-          <Field label="Curriculum (IB / AP / CBSE / A-Levels)" hint="Your board / curriculum — IB, AP, CBSE, ICSE, A-Levels, etc."><input className={inputCls} value={value.curriculum ?? ""} onChange={(e) => upd("curriculum", e.target.value)} /></Field>
-          <Field label="Current grade" hint="E.g. Grade 11, Year 12."><input className={inputCls} value={value.grade ?? ""} onChange={(e) => upd("grade", e.target.value)} /></Field>
-          <Field label="Graduation year" hint="Year you will finish high school."><input className={inputCls} value={value.graduation_year ?? ""} onChange={(e) => upd("graduation_year", e.target.value)} /></Field>
-          <Field label="GPA / Average" hint="Your cumulative grade average."><input className={inputCls} value={value.gpa ?? ""} onChange={(e) => upd("gpa", e.target.value)} /></Field>
-          <Field label="GPA scale (4.0 / 100 / 10)" hint="The maximum on your school's grading scale."><input className={inputCls} value={value.gpa_scale ?? ""} onChange={(e) => upd("gpa_scale", e.target.value)} /></Field>
-          <Field label="Class rank" hint="E.g. 5/120 — leave blank if your school doesn't rank."><input className={inputCls} value={value.class_rank ?? ""} onChange={(e) => upd("class_rank", e.target.value)} /></Field>
+          <Field label="School name *" hint="Full official name of your current/most recent school." error={e("school_name")}><input className={cls(e("school_name"))} value={value.school_name ?? ""} onChange={(ev) => upd("school_name", ev.target.value)} /></Field>
+          <Field label="Curriculum *" hint="Your board — IB, AP, CBSE, ICSE, A-Levels, etc." error={e("curriculum")}><input className={cls(e("curriculum"))} value={value.curriculum ?? ""} onChange={(ev) => upd("curriculum", ev.target.value)} /></Field>
+          <Field label="Current grade *" hint="E.g. Grade 11, Year 12." error={e("grade")}><input className={cls(e("grade"))} value={value.grade ?? ""} onChange={(ev) => upd("grade", ev.target.value)} /></Field>
+          <Field label="Graduation year *" hint="Year you will finish high school." error={e("graduation_year")}><input className={cls(e("graduation_year"))} value={value.graduation_year ?? ""} onChange={(ev) => upd("graduation_year", ev.target.value)} /></Field>
+          <Field label="GPA / Average *" hint="Your cumulative grade average." error={e("gpa")}><input className={cls(e("gpa"))} value={value.gpa ?? ""} onChange={(ev) => upd("gpa", ev.target.value)} /></Field>
+          <Field label="GPA scale *" hint="The maximum on your school's grading scale (4.0 / 100 / 10)." error={e("gpa_scale")}><input className={cls(e("gpa_scale"))} value={value.gpa_scale ?? ""} onChange={(ev) => upd("gpa_scale", ev.target.value)} /></Field>
+          <Field label="Class rank" hint="E.g. 5/120 — leave blank if your school doesn't rank."><input className={cls()} value={value.class_rank ?? ""} onChange={(ev) => upd("class_rank", ev.target.value)} /></Field>
         </div>
         <div className="mt-4 space-y-4">
-          <Field label="Honors / advanced courses" hint="List honors, AP, IB HL, or advanced electives you've taken."><textarea rows={3} className={inputCls} value={value.honors_courses ?? ""} onChange={(e) => upd("honors_courses", e.target.value)} /></Field>
-          <Field label="Subjects you're strongest in" hint="Subjects where you consistently score highest or enjoy most."><textarea rows={3} className={inputCls} value={value.notable_subjects ?? ""} onChange={(e) => upd("notable_subjects", e.target.value)} /></Field>
+          <Field label="Honors / advanced courses" hint="List honors, AP, IB HL, or advanced electives you've taken."><textarea rows={3} className={cls()} value={value.honors_courses ?? ""} onChange={(ev) => upd("honors_courses", ev.target.value)} /></Field>
+          <Field label="Subjects you're strongest in" hint="Subjects where you consistently score highest or enjoy most."><textarea rows={3} className={cls()} value={value.notable_subjects ?? ""} onChange={(ev) => upd("notable_subjects", ev.target.value)} /></Field>
         </div>
       </SectionCard>
     );
@@ -341,17 +447,17 @@ function SectionForm({ sectionKey, value, onChange }: { sectionKey: SectionKey; 
     return (
       <SectionCard title="Standardized testing" desc="Add what you have — leave the rest blank.">
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          <Field label="SAT total" hint="Your highest total SAT score (out of 1600)."><input className={inputCls} value={value.sat_total ?? ""} onChange={(e) => upd("sat_total", e.target.value)} /></Field>
-          <Field label="SAT Math" hint="SAT Math section score (out of 800)."><input className={inputCls} value={value.sat_math ?? ""} onChange={(e) => upd("sat_math", e.target.value)} /></Field>
-          <Field label="SAT EBRW" hint="SAT Evidence-Based Reading & Writing score (out of 800)."><input className={inputCls} value={value.sat_ebrw ?? ""} onChange={(e) => upd("sat_ebrw", e.target.value)} /></Field>
-          <Field label="ACT" hint="Composite ACT score (out of 36)."><input className={inputCls} value={value.act ?? ""} onChange={(e) => upd("act", e.target.value)} /></Field>
-          <Field label="TOEFL" hint="TOEFL iBT total score (out of 120)."><input className={inputCls} value={value.toefl ?? ""} onChange={(e) => upd("toefl", e.target.value)} /></Field>
-          <Field label="IELTS" hint="IELTS overall band (out of 9)."><input className={inputCls} value={value.ielts ?? ""} onChange={(e) => upd("ielts", e.target.value)} /></Field>
-          <Field label="Duolingo" hint="Duolingo English Test score (out of 160)."><input className={inputCls} value={value.duolingo ?? ""} onChange={(e) => upd("duolingo", e.target.value)} /></Field>
+          <Field label="SAT total" hint="Highest total SAT score (out of 1600)."><input className={cls()} value={value.sat_total ?? ""} onChange={(ev) => upd("sat_total", ev.target.value)} /></Field>
+          <Field label="SAT Math" hint="SAT Math section score (out of 800)."><input className={cls()} value={value.sat_math ?? ""} onChange={(ev) => upd("sat_math", ev.target.value)} /></Field>
+          <Field label="SAT EBRW" hint="SAT EBRW score (out of 800)."><input className={cls()} value={value.sat_ebrw ?? ""} onChange={(ev) => upd("sat_ebrw", ev.target.value)} /></Field>
+          <Field label="ACT" hint="Composite ACT score (out of 36)."><input className={cls()} value={value.act ?? ""} onChange={(ev) => upd("act", ev.target.value)} /></Field>
+          <Field label="TOEFL" hint="TOEFL iBT total score (out of 120)."><input className={cls()} value={value.toefl ?? ""} onChange={(ev) => upd("toefl", ev.target.value)} /></Field>
+          <Field label="IELTS" hint="IELTS overall band (out of 9)."><input className={cls()} value={value.ielts ?? ""} onChange={(ev) => upd("ielts", ev.target.value)} /></Field>
+          <Field label="Duolingo" hint="Duolingo English Test score (out of 160)."><input className={cls()} value={value.duolingo ?? ""} onChange={(ev) => upd("duolingo", ev.target.value)} /></Field>
         </div>
         <div className="mt-4 space-y-4">
-          <Field label="AP scores (e.g. Calc BC: 5, Bio: 4)" hint="List each AP subject with its score, one per line if possible."><textarea rows={2} className={inputCls} value={value.ap_scores ?? ""} onChange={(e) => upd("ap_scores", e.target.value)} /></Field>
-          <Field label="Other tests / olympiads" hint="Olympiads, SAT subject tests, national exams, etc."><textarea rows={2} className={inputCls} value={value.other_tests ?? ""} onChange={(e) => upd("other_tests", e.target.value)} /></Field>
+          <Field label="AP scores" hint="List each AP subject with its score, one per line if possible."><textarea rows={2} className={cls()} value={value.ap_scores ?? ""} onChange={(ev) => upd("ap_scores", ev.target.value)} /></Field>
+          <Field label="Other tests / olympiads" hint="Olympiads, SAT subject tests, national exams, etc."><textarea rows={2} className={cls()} value={value.other_tests ?? ""} onChange={(ev) => upd("other_tests", ev.target.value)} /></Field>
         </div>
       </SectionCard>
     );
@@ -375,15 +481,15 @@ function SectionForm({ sectionKey, value, onChange }: { sectionKey: SectionKey; 
                 </button>
               </div>
               <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <Field label="Activity name" hint="Name of the club, sport, job, project, or program."><input className={inputCls} value={a.name ?? ""} onChange={(e) => updateItem(i, "name", e.target.value)} /></Field>
-                <Field label="Your role" hint="E.g. President, Member, Captain, Intern, Founder."><input className={inputCls} value={a.role ?? ""} onChange={(e) => updateItem(i, "role", e.target.value)} /></Field>
-                <Field label="Category" hint="Super-curricular, Co-curricular, Extra-curricular, Volunteering, Academic."><input className={inputCls} value={a.category ?? ""} onChange={(e) => updateItem(i, "category", e.target.value)} /></Field>
-                <Field label="Grades (e.g. 9,10,11)" hint="Which school years you participated."><input className={inputCls} value={a.grades ?? ""} onChange={(e) => updateItem(i, "grades", e.target.value)} /></Field>
-                <Field label="Hours / week" hint="Average hours per week spent on this activity."><input className={inputCls} value={a.hours_per_week ?? ""} onChange={(e) => updateItem(i, "hours_per_week", e.target.value)} /></Field>
-                <Field label="Weeks / year" hint="Number of weeks per year you do this activity."><input className={inputCls} value={a.weeks_per_year ?? ""} onChange={(e) => updateItem(i, "weeks_per_year", e.target.value)} /></Field>
+                <Field label="Activity name *" hint="Name of the club, sport, job, project, or program." error={e(`name_${i}`)}><input className={cls(e(`name_${i}`))} value={a.name ?? ""} onChange={(ev) => updateItem(i, "name", ev.target.value)} /></Field>
+                <Field label="Your role" hint="E.g. President, Member, Captain, Intern, Founder."><input className={cls()} value={a.role ?? ""} onChange={(ev) => updateItem(i, "role", ev.target.value)} /></Field>
+                <Field label="Category" hint="Super-curricular, Co-curricular, Extra-curricular, Volunteering, Academic."><input className={cls()} value={a.category ?? ""} onChange={(ev) => updateItem(i, "category", ev.target.value)} /></Field>
+                <Field label="Grades (e.g. 9,10,11)" hint="Which school years you participated."><input className={cls()} value={a.grades ?? ""} onChange={(ev) => updateItem(i, "grades", ev.target.value)} /></Field>
+                <Field label="Hours / week" hint="Average hours per week."><input className={cls()} value={a.hours_per_week ?? ""} onChange={(ev) => updateItem(i, "hours_per_week", ev.target.value)} /></Field>
+                <Field label="Weeks / year" hint="Number of weeks per year."><input className={cls()} value={a.weeks_per_year ?? ""} onChange={(ev) => updateItem(i, "weeks_per_year", ev.target.value)} /></Field>
               </div>
               <div className="mt-3">
-                <Field label="Describe what you did and the impact" hint="Focus on outcomes, leadership, recognitions, and measurable impact."><textarea rows={3} className={inputCls} value={a.description ?? ""} onChange={(e) => updateItem(i, "description", e.target.value)} /></Field>
+                <Field label="Describe what you did and the impact" hint="Focus on outcomes, leadership, recognitions, and measurable impact."><textarea rows={3} className={cls()} value={a.description ?? ""} onChange={(ev) => updateItem(i, "description", ev.target.value)} /></Field>
               </div>
             </div>
           ))}
@@ -401,9 +507,9 @@ function SectionForm({ sectionKey, value, onChange }: { sectionKey: SectionKey; 
     return (
       <SectionCard title="Essays" desc="Drop your drafts — your advisor will review them.">
         <div className="space-y-4">
-          <Field label="Common App / personal statement (650 words)" hint="A personal essay that shows who you are beyond grades — story, voice, growth."><textarea rows={8} className={inputCls} value={value.common_essay ?? ""} onChange={(e) => upd("common_essay", e.target.value)} /></Field>
-          <Field label="Why this university / Why this major" hint="Be specific: programs, faculty, opportunities — avoid generic statements."><textarea rows={5} className={inputCls} value={value.why_us ?? ""} onChange={(e) => upd("why_us", e.target.value)} /></Field>
-          <Field label="Anything else you want your advisor to know" hint="Context that doesn't fit elsewhere — challenges, gaps, plans."><textarea rows={4} className={inputCls} value={value.additional_info ?? ""} onChange={(e) => upd("additional_info", e.target.value)} /></Field>
+          <Field label="Common App / personal statement *" hint="A personal essay that shows who you are beyond grades — story, voice, growth (100+ chars)." error={e("common_essay")}><textarea rows={8} className={cls(e("common_essay"))} value={value.common_essay ?? ""} onChange={(ev) => upd("common_essay", ev.target.value)} /></Field>
+          <Field label="Why this university / Why this major *" hint="Be specific: programs, faculty, opportunities — avoid generic statements." error={e("why_us")}><textarea rows={5} className={cls(e("why_us"))} value={value.why_us ?? ""} onChange={(ev) => upd("why_us", ev.target.value)} /></Field>
+          <Field label="Anything else you want your advisor to know" hint="Context that doesn't fit elsewhere — challenges, gaps, plans."><textarea rows={4} className={cls()} value={value.additional_info ?? ""} onChange={(ev) => upd("additional_info", ev.target.value)} /></Field>
         </div>
       </SectionCard>
     );
@@ -427,10 +533,10 @@ function SectionForm({ sectionKey, value, onChange }: { sectionKey: SectionKey; 
                 </button>
               </div>
               <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <Field label="Name" hint="Full name of your recommender."><input className={inputCls} value={r.recommender_name ?? ""} onChange={(e) => updateItem(i, "recommender_name", e.target.value)} /></Field>
-                <Field label="Role / Subject" hint="E.g. Math Teacher, School Counselor, Research Mentor."><input className={inputCls} value={r.recommender_role ?? ""} onChange={(e) => updateItem(i, "recommender_role", e.target.value)} /></Field>
-                <Field label="Email" hint="Official school or work email is strongly preferred."><input type="email" className={inputCls} value={r.recommender_email ?? ""} onChange={(e) => updateItem(i, "recommender_email", e.target.value)} /></Field>
-                <Field label="Relationship to you" hint="How long they've known you and in what capacity."><input className={inputCls} value={r.relationship ?? ""} onChange={(e) => updateItem(i, "relationship", e.target.value)} /></Field>
+                <Field label="Name *" hint="Full name of your recommender." error={e(`recommender_name_${i}`)}><input className={cls(e(`recommender_name_${i}`))} value={r.recommender_name ?? ""} onChange={(ev) => updateItem(i, "recommender_name", ev.target.value)} /></Field>
+                <Field label="Role / Subject" hint="E.g. Math Teacher, School Counselor, Research Mentor."><input className={cls()} value={r.recommender_role ?? ""} onChange={(ev) => updateItem(i, "recommender_role", ev.target.value)} /></Field>
+                <Field label="Email *" hint="Official school or work email is strongly preferred." error={e(`recommender_email_${i}`)}><input type="email" className={cls(e(`recommender_email_${i}`))} value={r.recommender_email ?? ""} onChange={(ev) => updateItem(i, "recommender_email", ev.target.value)} /></Field>
+                <Field label="Relationship to you" hint="How long they've known you and in what capacity."><input className={cls()} value={r.relationship ?? ""} onChange={(ev) => updateItem(i, "relationship", ev.target.value)} /></Field>
               </div>
             </div>
           ))}
@@ -448,11 +554,11 @@ function SectionForm({ sectionKey, value, onChange }: { sectionKey: SectionKey; 
   return (
     <SectionCard title="Preferences" desc="Where you want to go and what you want to study.">
       <div className="space-y-4">
-        <Field label="Intended major(s)" hint="Top 1-3 fields you want to study."><input className={inputCls} value={value.intended_majors ?? ""} onChange={(e) => upd("intended_majors", e.target.value)} /></Field>
-        <Field label="Preferred countries" hint="E.g. USA, UK, Canada, Singapore, Netherlands."><input className={inputCls} value={value.preferred_countries ?? ""} onChange={(e) => upd("preferred_countries", e.target.value)} /></Field>
-        <Field label="Budget range (USD/year)" hint="Total annual budget for tuition + living."><input className={inputCls} value={value.budget_range ?? ""} onChange={(e) => upd("budget_range", e.target.value)} /></Field>
-        <Field label="Universities you're already considering" hint="Comma-separated list — we'll add reach/target/safe matches around it."><textarea rows={4} className={inputCls} value={value.university_list ?? ""} onChange={(e) => upd("university_list", e.target.value)} /></Field>
-        <Field label="Notes for your advisor" hint="Anything else your advisor should know — preferences, constraints, deadlines."><textarea rows={4} className={inputCls} value={value.notes ?? ""} onChange={(e) => upd("notes", e.target.value)} /></Field>
+        <Field label="Intended major(s) *" hint="Top 1-3 fields you want to study." error={e("intended_majors")}><input className={cls(e("intended_majors"))} value={value.intended_majors ?? ""} onChange={(ev) => upd("intended_majors", ev.target.value)} /></Field>
+        <Field label="Preferred countries *" hint="E.g. USA, UK, Canada, Singapore, Netherlands. Used to prioritize your university shortlist." error={e("preferred_countries")}><input className={cls(e("preferred_countries"))} value={value.preferred_countries ?? ""} onChange={(ev) => upd("preferred_countries", ev.target.value)} /></Field>
+        <Field label="Budget range (USD/year)" hint="Total annual budget for tuition + living."><input className={cls()} value={value.budget_range ?? ""} onChange={(ev) => upd("budget_range", ev.target.value)} /></Field>
+        <Field label="Universities you're already considering *" hint="Comma-separated list — we'll heavily prioritize these in your shortlist." error={e("university_list")}><textarea rows={4} className={cls(e("university_list"))} value={value.university_list ?? ""} onChange={(ev) => upd("university_list", ev.target.value)} /></Field>
+        <Field label="Notes for your advisor" hint="Anything else your advisor should know — preferences, constraints, deadlines."><textarea rows={4} className={cls()} value={value.notes ?? ""} onChange={(ev) => upd("notes", ev.target.value)} /></Field>
       </div>
     </SectionCard>
   );
