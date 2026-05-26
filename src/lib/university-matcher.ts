@@ -151,11 +151,35 @@ function weightedScore(score: ScoreBreakdown, row: UniversityWeightRow): number 
   return Math.round((total / Math.max(1, weightSum)) * 10) / 10;
 }
 
-export function buildShortlist(score: ScoreBreakdown, rows: UniversityWeightRow[]): ShortlistEntry[] {
-  const scored: ShortlistEntry[] = rows.map((r) => {
+export interface ShortlistOptions {
+  preferredCountries?: string;
+  preferredUniversities?: string;
+}
+
+const tokenize = (s?: string) =>
+  (s || "")
+    .toLowerCase()
+    .split(/[,;/|\n]+/)
+    .map((t) => t.trim())
+    .filter((t) => t.length > 1);
+
+export function buildShortlist(
+  score: ScoreBreakdown,
+  rows: UniversityWeightRow[],
+  opts: ShortlistOptions = {},
+): ShortlistEntry[] {
+  const prefCountries = tokenize(opts.preferredCountries);
+  const prefUnis = tokenize(opts.preferredUniversities);
+
+  const scored: (ShortlistEntry & { _priority: number })[] = rows.map((r) => {
     const applicantWeightedScore = weightedScore(score, r);
     const gap = r.minimum_profile_score - applicantWeightedScore;
     const { tier, match } = tierAndMatch(gap);
+    const uniLower = r.university.toLowerCase();
+    const countryLower = (r.country || "").toLowerCase();
+    let priority = 0;
+    if (prefUnis.some((p) => uniLower.includes(p) || p.includes(uniLower))) priority += 100;
+    if (prefCountries.some((p) => countryLower.includes(p) || p.includes(countryLower))) priority += 40;
     return {
       university: r.university,
       country: r.country || "",
@@ -166,16 +190,29 @@ export function buildShortlist(score: ScoreBreakdown, rows: UniversityWeightRow[
       logoUrl: r.logo_url || undefined,
       cutoffNotes: r.cutoff_notes || undefined,
       weightedScore: applicantWeightedScore,
+      _priority: priority,
     };
   });
 
-  const byTier = (t: Tier) =>
-    scored.filter((s) => s.tier === t).sort((a, b) => b.match - a.match || a.gap - b.gap);
+  // If user specified preferences, heavily filter
+  const hasPrefs = prefCountries.length > 0 || prefUnis.length > 0;
+  let pool = scored;
+  if (hasPrefs) {
+    const matched = scored.filter((s) => s._priority > 0);
+    // Keep only matched if we have a reasonable amount; else fall back to all
+    if (matched.length >= 4) pool = matched;
+  }
 
-  return [
+  const sortKey = (a: ShortlistEntry & { _priority: number }) => -(a._priority * 1000 + a.match);
+  const byTier = (t: Tier) =>
+    pool.filter((s) => s.tier === t).sort((a, b) => sortKey(a) - sortKey(b));
+
+  const result = [
     ...byTier("Dream").slice(0, 4),
-    ...byTier("Reach").slice(0, 2),
+    ...byTier("Reach").slice(0, 3),
     ...byTier("Target").slice(0, 4),
     ...byTier("Safe").slice(0, 3),
   ];
+  return result.map(({ _priority, ...rest }) => rest);
 }
+
