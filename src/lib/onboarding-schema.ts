@@ -14,7 +14,7 @@ export const personalSchema = z.object({
   country: shortText,
   parent_name: shortText,
   parent_email: z.string().max(255).email().optional().or(z.literal("")),
-  parent_phone: shortText,
+  parent_phone: z.string().min(5, "Parent's phone is required").max(40),
 });
 
 export const academicsSchema = z.object({
