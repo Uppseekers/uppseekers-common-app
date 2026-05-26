@@ -362,8 +362,8 @@ export const submitProfile = createServerFn({ method: "POST" })
     // Persist AI review + computed shortlist for later PDF downloads
     try {
       await supabaseAdmin.from("applicant_profiles").update({
-        essays: { ...essays, ai_review: essayReview },
-        preferences: { ...preferences, computed_shortlist: shortlist, readiness_score: breakdown },
+        essays: { ...essays, ai_review: essayReview } as never,
+        preferences: { ...preferences, computed_shortlist: shortlist, readiness_score: breakdown } as never,
       }).eq("user_id", userId);
     } catch (e) { console.error("[uppseekers] persist review failed", e); }
 
