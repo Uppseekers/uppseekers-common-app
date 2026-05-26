@@ -88,7 +88,7 @@ export async function buildBrandedPdf(input: PdfReportInput): Promise<Uint8Array
   page.drawText("UPPSEEKERS", { x: MARGIN, y: y - 30, size: 11, font: bold, color: rgb(1, 1, 1) });
   page.drawText("Common Admission Profile Report", { x: MARGIN, y: y - 52, size: 18, font: serif, color: rgb(1, 1, 1) });
   page.drawText(new Date().toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" }), {
-    x: PAGE_W - MARGIN - 100, y: y - 30, size: 9, font: reg, color: rgb(1, 1, 1, 0.85 as never) ?? rgb(1, 1, 1),
+    x: PAGE_W - MARGIN - 100, y: y - 30, size: 9, font: reg, color: rgb(1, 1, 1),
   });
   y -= 110;
 
