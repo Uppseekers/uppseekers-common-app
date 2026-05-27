@@ -286,7 +286,12 @@ function bytesToBase64(bytes: Uint8Array): string {
   return typeof btoa !== "undefined" ? btoa(bin) : Buffer.from(bytes).toString("base64");
 }
 
-async function sendAdvisorEmail(html: string, subject: string, attachment?: { name: string; base64: string }) {
+async function sendAdvisorEmail(
+  html: string,
+  subject: string,
+  attachment?: { name: string; base64: string },
+  recipients?: { address: string; name?: string }[],
+) {
   const token = process.env.ZEPTOMAIL_TOKEN;
   const from = process.env.ZEPTOMAIL_FROM_EMAIL;
   const region = (process.env.ZEPTOMAIL_REGION || "in").toLowerCase();
@@ -296,9 +301,13 @@ async function sendAdvisorEmail(html: string, subject: string, attachment?: { na
   }
   const host = region === "com" ? "api.zeptomail.com" : `api.zeptomail.${region}`;
   const authHeader = token.startsWith("Zoho-enczapikey ") ? token : `Zoho-enczapikey ${token}`;
+  const to = (recipients && recipients.length
+    ? recipients
+    : [{ address: ADVISOR_EMAIL, name: "Akash" }]
+  ).map((r) => ({ email_address: { address: r.address, name: r.name ?? r.address } }));
   const body: Record<string, unknown> = {
     from: { address: from, name: "Uppseekers CAA" },
-    to: [{ email_address: { address: ADVISOR_EMAIL, name: "Akash" } }],
+    to,
     subject, htmlbody: html,
   };
   if (attachment) {
