@@ -188,12 +188,9 @@ function Onboarding() {
           toast.error(e.message);
         }
       }}
-      onDownload={async () => {
-        try {
-          const { pdfBase64 } = await downloadPdf({});
-          if (!pdfBase64) { toast.error("Report still generating — try again in a moment."); return; }
-          downloadBase64Pdf(pdfBase64, "uppseekers-profile-report.pdf");
-        } catch (e: any) { toast.error(e.message); }
+      onSendReport={async (advisorEmail: string) => {
+        const res = await sendReport({ data: { advisorEmail } });
+        return res;
       }}
     />;
   }
