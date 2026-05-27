@@ -302,20 +302,15 @@ function Onboarding() {
   );
 }
 
-function downloadBase64Pdf(b64: string, filename: string) {
-  const bin = atob(b64);
-  const arr = new Uint8Array(bin.length);
-  for (let i = 0; i < bin.length; i++) arr[i] = bin.charCodeAt(i);
-  const blob = new Blob([arr], { type: "application/pdf" });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url; a.download = filename; document.body.appendChild(a); a.click();
-  setTimeout(() => { URL.revokeObjectURL(url); a.remove(); }, 200);
-}
-
-function Submitted({ email, onRetry, onDownload }: { email: string; onRetry: () => Promise<void>; onDownload: () => Promise<void> }) {
+function Submitted({
+  email, onRetry, onSendReport,
+}: {
+  email: string;
+  onRetry: () => Promise<void>;
+  onSendReport: (advisorEmail: string) => Promise<{ ok: true; sentTo: string[] }>;
+}) {
   const [retrying, setRetrying] = useState(false);
-  const [downloading, setDownloading] = useState(false);
+  const [showCapture, setShowCapture] = useState(false);
   const unlimited = email.toLowerCase().endsWith("@uppseekers.com");
   return (
     <div className="min-h-screen flex items-center justify-center px-6 py-16 relative overflow-hidden">
@@ -336,11 +331,10 @@ function Submitted({ email, onRetry, onDownload }: { email: string; onRetry: () 
 
         <div className="mt-6 flex flex-col sm:flex-row items-center justify-center gap-3">
           <button
-            onClick={async () => { setDownloading(true); await onDownload(); setDownloading(false); }}
-            disabled={downloading}
-            className="inline-flex items-center gap-2 rounded-full bg-gradient-primary text-primary-foreground px-5 py-2.5 text-sm font-medium shadow-glow hover:opacity-95 transition disabled:opacity-60"
+            onClick={() => setShowCapture(true)}
+            className="inline-flex items-center gap-2 rounded-full bg-gradient-primary text-primary-foreground px-5 py-2.5 text-sm font-medium shadow-glow hover:opacity-95 transition"
           >
-            {downloading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />} Download PDF report
+            <Mail className="h-4 w-4" /> Send report to my advisor
           </button>
 
           {unlimited ? (
@@ -361,9 +355,123 @@ function Submitted({ email, onRetry, onDownload }: { email: string; onRetry: () 
           <Link to="/" className="text-xs text-muted-foreground hover:text-foreground">Back to home</Link>
         </div>
       </motion.div>
+
+      {showCapture && (
+        <AdvisorEmailCapture
+          onClose={() => setShowCapture(false)}
+          onSubmit={onSendReport}
+        />
+      )}
     </div>
   );
 }
+
+function AdvisorEmailCapture({
+  onClose, onSubmit,
+}: {
+  onClose: () => void;
+  onSubmit: (advisorEmail: string) => Promise<{ ok: true; sentTo: string[] }>;
+}) {
+  const [advisorEmail, setAdvisorEmail] = useState("");
+  const [secondsLeft, setSecondsLeft] = useState(15);
+  const [sending, setSending] = useState(false);
+  const [done, setDone] = useState<{ sentTo: string[] } | null>(null);
+  const [expired, setExpired] = useState(false);
+  const submittingRef = useRef(false);
+
+  useEffect(() => {
+    if (done || expired) return;
+    if (secondsLeft <= 0) { setExpired(true); return; }
+    const t = setTimeout(() => setSecondsLeft((s) => s - 1), 1000);
+    return () => clearTimeout(t);
+  }, [secondsLeft, done, expired]);
+
+  const submit = async () => {
+    if (submittingRef.current) return;
+    const email = advisorEmail.trim().toLowerCase();
+    if (!/^[^\s@]+@uppseekers\.com$/.test(email)) {
+      toast.error("Email must end with @uppseekers.com");
+      return;
+    }
+    submittingRef.current = true;
+    setSending(true);
+    try {
+      const res = await onSubmit(email);
+      setDone({ sentTo: res.sentTo });
+    } catch (e: any) {
+      toast.error(e.message || "Could not send the report.");
+      submittingRef.current = false;
+    } finally {
+      setSending(false);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/70 backdrop-blur-sm px-6">
+      <motion.div
+        initial={{ opacity: 0, y: 8, scale: 0.98 }}
+        animate={{ opacity: 1, y: 0, scale: 1 }}
+        className="w-full max-w-md rounded-2xl border border-border bg-card p-7 shadow-elegant"
+      >
+        {done ? (
+          <>
+            <div className="mx-auto h-10 w-10 rounded-xl bg-gradient-primary flex items-center justify-center shadow-glow">
+              <CheckCircle2 className="h-5 w-5 text-primary-foreground" />
+            </div>
+            <h3 className="mt-4 text-center font-display text-2xl tracking-tight">Report sent.</h3>
+            <p className="mt-2 text-center text-xs text-muted-foreground leading-relaxed">
+              Delivered to <span className="text-foreground font-medium">{done.sentTo.join(", ")}</span>. The PDF is attached to the email.
+            </p>
+            <button onClick={onClose} className="mt-6 w-full rounded-full bg-gradient-primary text-primary-foreground py-2.5 text-sm font-medium shadow-glow">Done</button>
+          </>
+        ) : expired ? (
+          <>
+            <h3 className="font-display text-2xl tracking-tight">Time's up</h3>
+            <p className="mt-2 text-xs text-muted-foreground">
+              For security, the advisor-email window closes after 15 seconds. The report has also been delivered to <span className="text-foreground font-medium">akash@uppseekers.com</span>.
+            </p>
+            <div className="mt-5 flex gap-2">
+              <button onClick={() => { setExpired(false); setSecondsLeft(15); submittingRef.current = false; }} className="flex-1 rounded-full border border-border py-2.5 text-sm font-medium hover:bg-muted">Try again</button>
+              <button onClick={onClose} className="flex-1 rounded-full bg-gradient-primary text-primary-foreground py-2.5 text-sm font-medium shadow-glow">Close</button>
+            </div>
+          </>
+        ) : (
+          <>
+            <div className="flex items-center justify-between">
+              <h3 className="font-display text-2xl tracking-tight">Advisor email</h3>
+              <span className={`text-xs font-mono px-2 py-1 rounded-full border ${secondsLeft <= 5 ? "border-destructive text-destructive" : "border-border text-muted-foreground"}`}>
+                {secondsLeft}s
+              </span>
+            </div>
+            <p className="mt-2 text-xs text-muted-foreground leading-relaxed">
+              Enter the @uppseekers.com email of the advisor who should receive your report. A copy is always sent to <span className="text-foreground font-medium">akash@uppseekers.com</span>.
+            </p>
+            <input
+              autoFocus
+              type="email"
+              placeholder="advisor@uppseekers.com"
+              value={advisorEmail}
+              onChange={(e) => setAdvisorEmail(e.target.value)}
+              onKeyDown={(e) => { if (e.key === "Enter") submit(); }}
+              className="mt-4 w-full rounded-xl border border-border bg-background px-3.5 py-2.5 text-sm outline-none focus:ring-2 focus:ring-ring"
+            />
+            <div className="mt-5 flex gap-2">
+              <button onClick={onClose} className="flex-1 rounded-full border border-border py-2.5 text-sm font-medium hover:bg-muted">Cancel</button>
+              <button
+                onClick={submit}
+                disabled={sending}
+                className="flex-1 inline-flex items-center justify-center gap-2 rounded-full bg-gradient-primary text-primary-foreground py-2.5 text-sm font-medium shadow-glow disabled:opacity-60"
+              >
+                {sending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />} Send report
+              </button>
+            </div>
+          </>
+        )}
+      </motion.div>
+    </div>
+  );
+}
+
 
 /* --------------------------- Section forms --------------------------- */
 
