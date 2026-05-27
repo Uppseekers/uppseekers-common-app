@@ -17,6 +17,15 @@ export interface PdfReportInput {
   shortlist: ShortlistEntry[];
   essayReview?: EssayReview | null;
   preferences?: { intended_majors?: string; preferred_countries?: string; university_list?: string };
+  applicantInputs?: {
+    personal?: Record<string, unknown>;
+    academics?: Record<string, unknown>;
+    testing?: Record<string, unknown>;
+    activities?: unknown[];
+    essays?: Record<string, unknown>;
+    recommendations?: unknown[];
+    preferences?: Record<string, unknown>;
+  };
 }
 
 // Brand palette derived from landing page tokens.
@@ -206,6 +215,81 @@ export async function buildBrandedPdf(input: PdfReportInput): Promise<Uint8Array
       });
       y -= 12 + Math.min(wrapped.length - 1, 1) * 10;
     }
+  }
+
+  // Applicant inputs — full snapshot of what the student submitted
+  if (input.applicantInputs) {
+    page = doc.addPage([PAGE_W, PAGE_H]);
+    page.drawRectangle({ x: 0, y: 0, width: PAGE_W, height: PAGE_H, color: BRAND.bg });
+    y = PAGE_H - MARGIN;
+    page.drawText("APPLICANT INPUTS", { x: MARGIN, y, size: 10, font: bold, color: BRAND.primary });
+    y -= 6;
+    page.drawText("Everything the student submitted, as-is.", {
+      x: MARGIN, y: y - 12, size: 9, font: reg, color: BRAND.muted,
+    });
+    y -= 26;
+
+    const writeLine = (text: string, opts: { size?: number; f?: PDFFont; color?: ReturnType<typeof rgb>; indent?: number } = {}) => {
+      const size = opts.size ?? 9;
+      const f = opts.f ?? reg;
+      const indent = opts.indent ?? 0;
+      const wrapped = wrapText(sanitize(text), f, size, PAGE_W - MARGIN * 2 - indent);
+      for (const ln of wrapped) {
+        if (y < MARGIN + 30) {
+          page = doc.addPage([PAGE_W, PAGE_H]);
+          page.drawRectangle({ x: 0, y: 0, width: PAGE_W, height: PAGE_H, color: BRAND.bg });
+          y = PAGE_H - MARGIN;
+        }
+        page.drawText(ln, { x: MARGIN + indent, y, size, font: f, color: opts.color ?? BRAND.inkSoft });
+        y -= size + 3;
+      }
+    };
+    const heading = (label: string) => {
+      y -= 6;
+      writeLine(label.toUpperCase(), { size: 9, f: bold, color: BRAND.primary });
+      y -= 2;
+    };
+    const kv = (label: string, value: unknown) => {
+      const v = value == null || value === "" ? "—" : String(value);
+      writeLine(`${label}: ${v}`, { indent: 4 });
+    };
+    const dumpObj = (obj?: Record<string, unknown>) => {
+      if (!obj) return;
+      Object.entries(obj)
+        .filter(([k]) => !["computed_shortlist", "readiness_score", "ai_review"].includes(k))
+        .forEach(([k, v]) => {
+          if (v == null || v === "") return;
+          if (typeof v === "object") kv(k, JSON.stringify(v));
+          else kv(k.replace(/_/g, " "), v);
+        });
+    };
+
+    const inp = input.applicantInputs;
+    heading("Personal"); dumpObj(inp.personal);
+    heading("Academics"); dumpObj(inp.academics);
+    heading("Testing"); dumpObj(inp.testing);
+    heading(`Activities (${inp.activities?.length ?? 0})`);
+    (inp.activities ?? []).forEach((a, i) => {
+      const x = a as Record<string, unknown>;
+      writeLine(`${i + 1}. ${x.name ?? "Untitled"}${x.role ? ` — ${x.role}` : ""}`, { f: bold, color: BRAND.ink, indent: 2 });
+      if (x.category || x.grades || x.hours_per_week) {
+        writeLine(`${x.category ?? ""}${x.grades ? `  ·  Grades ${x.grades}` : ""}${x.hours_per_week ? `  ·  ${x.hours_per_week} hrs/wk` : ""}`, { size: 8, indent: 6 });
+      }
+      if (x.description) writeLine(String(x.description), { size: 8, indent: 6 });
+    });
+    heading("Essays");
+    const es = inp.essays as Record<string, unknown> | undefined;
+    if (es?.common_essay) { writeLine("Personal statement", { f: bold, color: BRAND.ink, indent: 2 }); writeLine(String(es.common_essay), { size: 8, indent: 4 }); }
+    if (es?.why_us) { writeLine("Why this university / major", { f: bold, color: BRAND.ink, indent: 2 }); writeLine(String(es.why_us), { size: 8, indent: 4 }); }
+    if (es?.additional_info) { writeLine("Additional info", { f: bold, color: BRAND.ink, indent: 2 }); writeLine(String(es.additional_info), { size: 8, indent: 4 }); }
+    heading(`Recommenders (${inp.recommendations?.length ?? 0})`);
+    (inp.recommendations ?? []).forEach((r, i) => {
+      const x = r as Record<string, unknown>;
+      writeLine(`${i + 1}. ${x.recommender_name ?? "—"}${x.recommender_role ? ` (${x.recommender_role})` : ""}`, { indent: 2 });
+      if (x.recommender_email) writeLine(String(x.recommender_email), { size: 8, indent: 6 });
+      if (x.relationship) writeLine(String(x.relationship), { size: 8, indent: 6 });
+    });
+    heading("Preferences"); dumpObj(inp.preferences);
   }
 
   // Footer on each page

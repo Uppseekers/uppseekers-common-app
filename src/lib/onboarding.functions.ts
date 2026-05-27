@@ -286,7 +286,12 @@ function bytesToBase64(bytes: Uint8Array): string {
   return typeof btoa !== "undefined" ? btoa(bin) : Buffer.from(bytes).toString("base64");
 }
 
-async function sendAdvisorEmail(html: string, subject: string, attachment?: { name: string; base64: string }) {
+async function sendAdvisorEmail(
+  html: string,
+  subject: string,
+  attachment?: { name: string; base64: string },
+  recipients?: { address: string; name?: string }[],
+) {
   const token = process.env.ZEPTOMAIL_TOKEN;
   const from = process.env.ZEPTOMAIL_FROM_EMAIL;
   const region = (process.env.ZEPTOMAIL_REGION || "in").toLowerCase();
@@ -296,9 +301,13 @@ async function sendAdvisorEmail(html: string, subject: string, attachment?: { na
   }
   const host = region === "com" ? "api.zeptomail.com" : `api.zeptomail.${region}`;
   const authHeader = token.startsWith("Zoho-enczapikey ") ? token : `Zoho-enczapikey ${token}`;
+  const to = (recipients && recipients.length
+    ? recipients
+    : [{ address: ADVISOR_EMAIL, name: "Akash" }]
+  ).map((r) => ({ email_address: { address: r.address, name: r.name ?? r.address } }));
   const body: Record<string, unknown> = {
     from: { address: from, name: "Uppseekers CAA" },
-    to: [{ email_address: { address: ADVISOR_EMAIL, name: "Akash" } }],
+    to,
     subject, htmlbody: html,
   };
   if (attachment) {
@@ -392,9 +401,19 @@ export const submitProfile = createServerFn({ method: "POST" })
     return { ok: true, emailSent: sendResult.sent, pdfBase64 };
   });
 
-export const downloadReportPdf = createServerFn({ method: "POST" })
+export const emailReportToAdvisor = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .handler(async ({ context }) => {
+  .inputValidator((input) =>
+    z.object({
+      advisorEmail: z
+        .string()
+        .trim()
+        .toLowerCase()
+        .email("Enter a valid email")
+        .endsWith("@uppseekers.com", "Email must end with @uppseekers.com"),
+    }).parse(input),
+  )
+  .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
     const { data: profile, error } = await supabase
       .from("applicant_profiles").select("*").eq("user_id", userId).single();
@@ -419,6 +438,33 @@ export const downloadReportPdf = createServerFn({ method: "POST" })
         preferred_countries: preferences.preferred_countries,
         university_list: preferences.university_list,
       },
+      applicantInputs: {
+        personal: profile.personal as Record<string, unknown> | undefined,
+        academics: profile.academics as Record<string, unknown> | undefined,
+        testing: profile.testing as Record<string, unknown> | undefined,
+        activities: profile.activities as unknown[] | undefined,
+        essays: essays as Record<string, unknown>,
+        recommendations: profile.recommendations as unknown[] | undefined,
+        preferences,
+      },
     });
-    return { pdfBase64: bytesToBase64(pdfBytes) };
+    const pdfBase64 = bytesToBase64(pdfBytes);
+
+    const shortlistHtml = renderShortlistHtml(breakdown.total, shortlist);
+    const html = renderEmailHtml({
+      fullName, email, userId, profile,
+      shortlistHtml, essayReview: essays.ai_review ?? null,
+    });
+    const subject = `Uppseekers profile report — ${fullName} · ${breakdown.total}/100`;
+
+    // Always include akash@uppseekers.com, dedupe in case advisor === akash.
+    const recipients = Array.from(new Set([data.advisorEmail, ADVISOR_EMAIL])).map((address) => ({ address }));
+    const sendResult = await sendAdvisorEmail(
+      html, subject,
+      { name: `uppseekers-${userId.slice(0, 8)}.pdf`, base64: pdfBase64 },
+      recipients,
+    );
+    if (!sendResult.sent) throw new Error("Could not send the report right now. Please try again.");
+    return { ok: true, sentTo: recipients.map((r) => r.address) };
   });
+
