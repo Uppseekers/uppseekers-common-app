@@ -575,7 +575,7 @@ function SectionForm({ sectionKey, value, errors, onChange }: { sectionKey: Sect
       onChange(next);
     };
     return (
-      <SectionCard title="Activities" desc="Clubs, sports, jobs, research, volunteering — add up to 10.">
+      <SectionCard title="Activities" desc="Clubs, sports, jobs, research, volunteering. Ideally students put 8–10 activities (max 10).">
         <div className="space-y-4">
           {list.map((a, i) => (
             <div key={i} className="rounded-xl border border-border p-4">
