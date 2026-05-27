@@ -17,6 +17,15 @@ export interface PdfReportInput {
   shortlist: ShortlistEntry[];
   essayReview?: EssayReview | null;
   preferences?: { intended_majors?: string; preferred_countries?: string; university_list?: string };
+  applicantInputs?: {
+    personal?: Record<string, unknown>;
+    academics?: Record<string, unknown>;
+    testing?: Record<string, unknown>;
+    activities?: unknown[];
+    essays?: Record<string, unknown>;
+    recommendations?: unknown[];
+    preferences?: Record<string, unknown>;
+  };
 }
 
 // Brand palette derived from landing page tokens.
