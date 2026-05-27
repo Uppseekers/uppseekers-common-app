@@ -17,7 +17,7 @@ const SECTIONS: { key: SectionKey; label: string; desc: string }[] = [
   { key: "personal", label: "Personal", desc: "Who you are" },
   { key: "academics", label: "Academics", desc: "School, GPA, courses" },
   { key: "testing", label: "Testing", desc: "SAT/ACT/AP/IELTS" },
-  { key: "activities", label: "Activities", desc: "Up to 10 entries" },
+  { key: "activities", label: "Activities", desc: "Ideally 8–10 entries" },
   { key: "essays", label: "Essays", desc: "Drafts & prompts" },
   { key: "recommendations", label: "Recommenders", desc: "Teachers & counselors" },
   { key: "preferences", label: "Preferences", desc: "Majors & target list" },
