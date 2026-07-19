@@ -6,11 +6,15 @@ import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/signin")({
   head: () => ({ meta: [{ title: "Sign in — Uppseekers" }] }),
+  validateSearch: (s: Record<string, unknown>) => ({
+    next: typeof s.next === "string" && s.next.startsWith("/") && !s.next.startsWith("//") ? s.next : undefined,
+  }),
   component: SignIn,
 });
 
 function SignIn() {
   const nav = useNavigate();
+  const { next } = Route.useSearch();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
@@ -25,6 +29,10 @@ function SignIn() {
         return;
       }
       toast.success("Welcome back");
+      if (next) {
+        window.location.href = next;
+        return;
+      }
       await nav({ to: "/onboarding" });
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Sign in failed. Please try again.");
