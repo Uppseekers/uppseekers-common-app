@@ -1,0 +1,72 @@
+{
+  "version": 1,
+  "sdk_version": "0.23.0",
+  "path": "/mcp",
+  "auth": {
+    "type": "oauth",
+    "issuer": "https://xryptvfjngeuohbncbkz.supabase.co/auth/v1",
+    "accepted_audiences": [
+      "authenticated"
+    ]
+  },
+  "mcp": {
+    "server": {
+      "name": "uppseekers-caa-mcp",
+      "version": "0.1.0",
+      "title": "Uppseekers Common Admission App"
+    },
+    "tools": [
+      {
+        "name": "get_my_profile",
+        "title": "Get my applicant profile",
+        "description": "Return the signed-in Uppseekers user's applicant profile including personal, academics, testing, activities, essays, recommendations, and preferences sections.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
+          "type": "object",
+          "properties": {}
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "list_universities",
+        "title": "List universities",
+        "description": "List universities from the Uppseekers weightage catalog, optionally filtered by country or course, with rank, country, minimum profile score, and category weights.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
+          "type": "object",
+          "properties": {
+            "country": {
+              "description": "Filter by country name (case-insensitive contains match).",
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 64
+            },
+            "course_key": {
+              "description": "Filter by course key (e.g. cs, ds, business, finance).",
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 64
+            },
+            "limit": {
+              "description": "Max rows to return (default 25).",
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100
+            }
+          }
+        },
+        "outputSchema": null
+      }
+    ]
+  }
+}
