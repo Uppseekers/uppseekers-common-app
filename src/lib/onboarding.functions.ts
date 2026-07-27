@@ -103,7 +103,7 @@ export const startRetry = createServerFn({ method: "POST" })
     if (!isUnlimitedEmail(email)) {
       throw new Error("Retries are limited to internal Uppseekers accounts. You can retry after 90 days.");
     }
-    const { error: upErr } = await supabase
+    const { error: upErr } = await supabaseAdmin
       .from("applicant_profiles")
       .update({ status: "in_progress" })
       .eq("user_id", userId);
