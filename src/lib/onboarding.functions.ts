@@ -341,19 +341,25 @@ export const submitProfile = createServerFn({ method: "POST" })
     const email = userInfo.user?.email ?? "unknown";
     const unlimited = isUnlimitedEmail(email);
 
-    if (!unlimited && profile.submitted_at) {
-      const elapsed = Date.now() - new Date(profile.submitted_at).getTime();
-      if (elapsed < RETRY_COOLDOWN_MS) {
-        throw new Error("You can retry after 90 days.");
-      }
-    }
-
+    // Atomic conditional claim to prevent duplicate advisor emails from
+    // concurrent submitProfile invocations (TOCTOU). Uses the admin client
+    // because a trigger blocks non-privileged writes to status/submitted_at.
+    // The WHERE clause enforces the 90-day cooldown at the database level,
+    // so two concurrent requests cannot both pass the check.
     const submittedAt = new Date().toISOString();
-    const { error: claimError } = await supabase
+    const cooldownCutoff = new Date(Date.now() - RETRY_COOLDOWN_MS).toISOString();
+    let claimQuery = supabaseAdmin
       .from("applicant_profiles")
       .update({ status: "submitted", submitted_at: submittedAt })
       .eq("user_id", userId);
+    if (!unlimited) {
+      claimQuery = claimQuery.or(`submitted_at.is.null,submitted_at.lt.${cooldownCutoff}`);
+    }
+    const { data: claimed, error: claimError } = await claimQuery.select("user_id");
     if (claimError) throw new Error(claimError.message);
+    if (!claimed || claimed.length === 0) {
+      throw new Error("You can retry after 90 days.");
+    }
 
     const personal = (profile.personal ?? {}) as { full_name?: string };
     const fullName = personal.full_name ||
