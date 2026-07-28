@@ -38,15 +38,11 @@ export function Navbar() {
                 My application
               </Link>
             ) : (
-              <>
-                <Link to="/signin" className="hidden sm:inline-flex items-center text-sm text-muted-foreground hover:text-foreground transition px-3 py-1.5">
-                  Sign in
-                </Link>
-                <Link to="/signup" className="inline-flex items-center rounded-full bg-foreground text-background px-4 py-2 text-sm font-medium hover:opacity-90 transition shadow-card">
-                  Get started
-                </Link>
-              </>
+              <Link to="/signup" className="inline-flex items-center rounded-full bg-foreground text-background px-4 py-2 text-sm font-medium hover:opacity-90 transition shadow-card">
+                Get started
+              </Link>
             )}
+
           </div>
         </div>
       </div>
