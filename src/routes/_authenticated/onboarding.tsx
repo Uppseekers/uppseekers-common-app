@@ -7,7 +7,6 @@ import { toast } from "sonner";
 import { getMyProfile, saveSection, submitProfile, startRetry, emailReportToAdvisor } from "@/lib/onboarding.functions";
 import { SECTION_KEYS, type SectionKey } from "@/lib/onboarding-schema";
 import { useAuth } from "@/hooks/useAuth";
-import { getAccessStatus } from "@/lib/access.functions";
 
 export const Route = createFileRoute("/_authenticated/onboarding")({
   head: () => ({ meta: [{ title: "Your Application — Uppseekers" }] }),
@@ -85,8 +84,6 @@ function Onboarding() {
   const submit = useServerFn(submitProfile);
   const retry = useServerFn(startRetry);
   const sendReport = useServerFn(emailReportToAdvisor);
-  const checkAccess = useServerFn(getAccessStatus);
-
 
   const [active, setActive] = useState<SectionKey>("personal");
   const [state, setState] = useState<State | null>(null);
@@ -97,18 +94,6 @@ function Onboarding() {
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
-    checkAccess()
-      .then((a: any) => {
-        if (!a?.hasAccess) {
-          toast.error("Complete the ₹99 payment to unlock your readiness report.");
-          nav({ to: "/ivy-readiness" });
-        }
-      })
-      .catch(() => nav({ to: "/ivy-readiness" }));
-  }, [checkAccess, nav]);
-
-  useEffect(() => {
-
     fetchProfile().then((p: any) => {
       setState({
         personal: p.personal ?? {},

@@ -38,7 +38,7 @@ function SignUp() {
         return;
       }
       toast.success("Account created — check your inbox to verify before signing in.");
-      await nav({ to: "/signin", search: { next: undefined } });
+      await nav({ to: "/signin" });
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Sign up failed. Please try again.");
     } finally {
@@ -75,7 +75,7 @@ function SignUp() {
         </form>
 
         <p className="mt-6 text-center text-xs text-muted-foreground">
-          Already have an account? <Link to="/signin" search={{ next: undefined }} className="text-foreground hover:underline">Sign in</Link>
+          Already have an account? <Link to="/signin" className="text-foreground hover:underline">Sign in</Link>
         </p>
       </div>
     </div>
