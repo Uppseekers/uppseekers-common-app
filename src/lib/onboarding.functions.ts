@@ -19,6 +19,7 @@ import {
   type ScoreBreakdown,
 } from "./university-matcher";
 import { buildBrandedPdf, type EssayReview } from "./pdf-report";
+import { assertAccess } from "./access.functions";
 
 const ADVISOR_EMAIL = "akash@uppseekers.com";
 
@@ -339,7 +340,9 @@ export const submitProfile = createServerFn({ method: "POST" })
 
     const { data: userInfo } = await supabaseAdmin.auth.admin.getUserById(userId);
     const email = userInfo.user?.email ?? "unknown";
+    await assertAccess(supabase, userId, email);
     const unlimited = isUnlimitedEmail(email);
+
 
     // Atomic conditional claim to prevent duplicate advisor emails from
     // concurrent submitProfile invocations (TOCTOU). Uses the admin client
@@ -426,6 +429,8 @@ export const emailReportToAdvisor = createServerFn({ method: "POST" })
     if (error || !profile) throw new Error(error?.message ?? "Profile not found");
     const { data: userInfo } = await supabaseAdmin.auth.admin.getUserById(userId);
     const email = userInfo.user?.email ?? "";
+    await assertAccess(supabase, userId, email);
+
     const personal = (profile.personal ?? {}) as { full_name?: string };
     const fullName = personal.full_name || email;
     const essays = (profile.essays ?? {}) as { common_essay?: string; why_us?: string; additional_info?: string; ai_review?: EssayReview };

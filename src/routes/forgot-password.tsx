@@ -38,7 +38,7 @@ function ForgotPassword() {
     <div className="min-h-screen flex items-center justify-center px-6 py-16 relative overflow-hidden">
       <div aria-hidden className="absolute inset-0 -z-10 opacity-50 blur-3xl" style={{ background: "radial-gradient(50% 50% at 50% 0%, oklch(0.7 0.2 265 / 0.3), transparent 70%)" }} />
       <div className="absolute top-6 left-6">
-        <Link to="/signin" className="text-sm text-muted-foreground hover:text-foreground inline-flex items-center gap-1.5">
+        <Link to="/signin" search={{ next: undefined }} className="text-sm text-muted-foreground hover:text-foreground inline-flex items-center gap-1.5">
           <ArrowLeft className="h-4 w-4" /> Back to sign in
         </Link>
       </div>
