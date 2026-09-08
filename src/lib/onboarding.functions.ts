@@ -19,6 +19,7 @@ import {
   type ScoreBreakdown,
 } from "./university-matcher";
 import { buildBrandedPdf, type EssayReview } from "./pdf-report";
+import { assertAccess } from "./access.functions";
 
 const ADVISOR_EMAIL = "akash@uppseekers.com";
 
