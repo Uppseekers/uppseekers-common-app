@@ -339,7 +339,9 @@ export const submitProfile = createServerFn({ method: "POST" })
 
     const { data: userInfo } = await supabaseAdmin.auth.admin.getUserById(userId);
     const email = userInfo.user?.email ?? "unknown";
+    await assertAccess(supabase, userId, email);
     const unlimited = isUnlimitedEmail(email);
+
 
     // Atomic conditional claim to prevent duplicate advisor emails from
     // concurrent submitProfile invocations (TOCTOU). Uses the admin client
