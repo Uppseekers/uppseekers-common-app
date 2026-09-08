@@ -84,6 +84,8 @@ function Onboarding() {
   const submit = useServerFn(submitProfile);
   const retry = useServerFn(startRetry);
   const sendReport = useServerFn(emailReportToAdvisor);
+  const checkAccess = useServerFn(getAccessStatus);
+
 
   const [active, setActive] = useState<SectionKey>("personal");
   const [state, setState] = useState<State | null>(null);
