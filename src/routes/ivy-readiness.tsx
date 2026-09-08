@@ -148,7 +148,7 @@ function IvyLanding() {
 
             <p className="mt-8 text-xs text-muted-foreground">
               Already have an account?{" "}
-              <Link to="/signin" className="text-foreground hover:underline">
+              <Link to="/signin" search={{ next: undefined }} className="text-foreground hover:underline">
                 Sign in
               </Link>
             </p>
