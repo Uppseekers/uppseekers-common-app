@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import { getMyProfile, saveSection, submitProfile, startRetry, emailReportToAdvisor } from "@/lib/onboarding.functions";
 import { SECTION_KEYS, type SectionKey } from "@/lib/onboarding-schema";
 import { useAuth } from "@/hooks/useAuth";
+import { getAccessStatus } from "@/lib/access.functions";
 
 export const Route = createFileRoute("/_authenticated/onboarding")({
   head: () => ({ meta: [{ title: "Your Application — Uppseekers" }] }),
