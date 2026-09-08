@@ -96,6 +96,18 @@ function Onboarding() {
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
+    checkAccess()
+      .then((a: any) => {
+        if (!a?.hasAccess) {
+          toast.error("Complete the ₹99 payment to unlock your readiness report.");
+          nav({ to: "/ivy-readiness" });
+        }
+      })
+      .catch(() => nav({ to: "/ivy-readiness" }));
+  }, [checkAccess, nav]);
+
+  useEffect(() => {
+
     fetchProfile().then((p: any) => {
       setState({
         personal: p.personal ?? {},
