@@ -429,6 +429,8 @@ export const emailReportToAdvisor = createServerFn({ method: "POST" })
     if (error || !profile) throw new Error(error?.message ?? "Profile not found");
     const { data: userInfo } = await supabaseAdmin.auth.admin.getUserById(userId);
     const email = userInfo.user?.email ?? "";
+    await assertAccess(supabase, userId, email);
+
     const personal = (profile.personal ?? {}) as { full_name?: string };
     const fullName = personal.full_name || email;
     const essays = (profile.essays ?? {}) as { common_essay?: string; why_us?: string; additional_info?: string; ai_review?: EssayReview };
