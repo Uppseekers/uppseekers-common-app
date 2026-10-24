@@ -169,7 +169,7 @@ export function CtaButtons() {
   return (
     <>
       <Link to="/contact" className="rounded-full bg-primary text-primary-foreground px-6 py-3 text-sm font-medium hover:opacity-90">Book Consultation</Link>
-      <Link to="/app" className="rounded-full border border-border bg-background px-6 py-3 text-sm font-medium hover:bg-muted">Try the Diagnostic App</Link>
+      <Link to="/signup" className="rounded-full border border-border bg-background px-6 py-3 text-sm font-medium hover:bg-muted">Try the Diagnostic App</Link>
     </>
   );
 }
