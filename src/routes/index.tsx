@@ -1,6 +1,9 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Briefcase, FlaskConical, Lightbulb, Star } from "lucide-react";
 import { SiteLayout, CtaButtons, seo } from "@/components/site/SiteShell";
+import { ImageSplit, MeritNote, UniversityLogos, FormSection } from "@/components/site/EnquiryForm";
+import team from "@/assets/internship-team.jpg";
+import lab from "@/assets/research-lab.jpg";
 
 export const Route = createFileRoute("/")({
   head: () => seo(
@@ -73,7 +76,19 @@ function Home() {
         </div>
       </section>
 
-      <section className="mx-auto max-w-6xl px-4 py-20 grid gap-6 md:grid-cols-3 text-center">
+      <ImageSplit img={team} alt="Students collaborating with a mentor" title="Why experiential profile building?">
+        <p>Good grades are expected. What sets an application apart is evidence: work a student has actually done, problems they have solved and ideas they have followed through.</p>
+        <p>Uppseekers helps students in Classes 7 to 12+ build that evidence step by step, with mentors who guide every stage, from first internship to final application.</p>
+      </ImageSplit>
+
+      <ImageSplit reverse img={lab} alt="Student researching with a mentor" title="Mentorship that goes deep">
+        <p>Every student gets personal attention. Small cohorts mean mentors know each student's goals, strengths and progress.</p>
+        <p>Our approach is led by Sriram Sekhar (NIT Surat, IIM Bangalore) and a team of experienced advisors.</p>
+      </ImageSplit>
+
+      <MeritNote />
+
+      <section className="mx-auto max-w-6xl px-4 py-16 grid gap-6 md:grid-cols-3 text-center">
         {[["4.7★", "Google Reviews"], ["4.3★", "Student rating"], ["9", "Students per track, per month"]].map(([n, l]) => (
           <div key={l} className="rounded-2xl border border-border p-8">
             <p className="text-4xl font-semibold text-primary">{n}</p>
@@ -81,6 +96,9 @@ function Home() {
           </div>
         ))}
       </section>
+
+      <UniversityLogos />
+      <FormSection />
 
       <section className="mx-auto max-w-4xl px-4 text-center">
         <div className="rounded-3xl bg-navy text-navy-foreground p-12">
