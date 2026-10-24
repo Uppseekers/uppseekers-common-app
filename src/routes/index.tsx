@@ -1,40 +1,94 @@
-import { createFileRoute } from "@tanstack/react-router";
-import { Navbar } from "@/components/site/Navbar";
-import { Hero } from "@/components/site/Hero";
-import { HowItWorks } from "@/components/site/HowItWorks";
-import { Features } from "@/components/site/Features";
-import { Universities } from "@/components/site/Universities";
-import { CTA } from "@/components/site/CTA";
-import { Footer } from "@/components/site/Footer";
+import { createFileRoute, Link } from "@tanstack/react-router";
+import { Briefcase, FlaskConical, Lightbulb, Star } from "lucide-react";
+import { SiteLayout, CtaButtons, seo } from "@/components/site/SiteShell";
 
 export const Route = createFileRoute("/")({
-  head: () => ({
-    meta: [
-      { title: "Uppseekers — Common Admission App" },
-      {
-        name: "description",
-        content:
-          "Uppseekers Common Admission App — one profile that goes to an Uppseekers advisor for a personalized review and university path.",
-      },
-      { property: "og:title", content: "Uppseekers — Common Admission App" },
-      { property: "og:description", content: "Build one applicant profile. Get matched with an Uppseekers advisor." },
-    ],
-  }),
-  component: Index,
+  head: () => seo(
+    "Uppseekers — Internships, Research Mentorship & Admissions Guidance",
+    "Experiential profile building for ambitious students: Alpha Internships, Alpha Research mentorship, passion projects and a 6-stage admissions roadmap.",
+  ),
+  component: Home,
 });
 
-function Index() {
+const pillars = [
+  { icon: Briefcase, title: "Alpha Internships", to: "/alpha-internships", text: "Real-world Skill Sprint and Skill Immersion programs that turn interest into demonstrated experience." },
+  { icon: FlaskConical, title: "Alpha Research", to: "/alpha-research", text: "One-on-one research mentorship, from first question to a finished, publishable paper." },
+  { icon: Lightbulb, title: "Passion Projects", to: "/passion-projects", text: "A capstone incubator that helps students build original projects with real impact." },
+] as const;
+
+const roadmap = [
+  { t: "Diagnose", d: "Benchmark your profile with our Common Admission App." },
+  { t: "Discover", d: "Identify your academic spike and target majors." },
+  { t: "Build", d: "Internships, research and passion projects that prove it." },
+  { t: "Shortlist", d: "Balanced Safe, Target and Dream university list." },
+  { t: "Write", d: "Essays and applications that tell one coherent story." },
+  { t: "Decide", d: "Interviews, offers and final enrolment decisions." },
+];
+
+function Home() {
   return (
-    <div className="min-h-screen bg-background">
-      <Navbar />
-      <main>
-        <Hero />
-        <HowItWorks />
-        <Features />
-        <Universities />
-        <CTA />
-      </main>
-      <Footer />
-    </div>
+    <SiteLayout>
+      <section className="bg-gradient-hero">
+        <div className="mx-auto max-w-6xl px-4 pt-24 pb-20 text-center">
+          <p className="inline-flex items-center gap-2 rounded-full border border-border bg-background px-4 py-1.5 text-xs font-medium text-muted-foreground">
+            <Star className="h-3.5 w-3.5 fill-warning text-warning" /> 4.7 on Google Reviews
+          </p>
+          <h1 className="mt-6 text-5xl md:text-7xl font-semibold tracking-tight text-foreground">
+            Build a profile <span className="text-primary">universities remember.</span>
+          </h1>
+          <p className="mt-6 text-lg text-muted-foreground max-w-2xl mx-auto">
+            Experiential profile building through real internships, research mentorship and passion projects, guided by a clear admissions roadmap.
+          </p>
+          <div className="mt-9 flex flex-wrap justify-center gap-3"><CtaButtons /></div>
+        </div>
+      </section>
+
+      <section className="mx-auto max-w-6xl px-4 py-20">
+        <h2 className="text-3xl md:text-4xl font-semibold tracking-tight text-center">Experiential profile building</h2>
+        <p className="mt-3 text-center text-muted-foreground">Three programs. One goal: proof of who you are.</p>
+        <div className="mt-12 grid gap-6 md:grid-cols-3">
+          {pillars.map((p) => (
+            <Link key={p.to} to={p.to} className="group rounded-2xl border border-border bg-card p-7 shadow-card hover:border-primary transition">
+              <p.icon className="h-8 w-8 text-primary" />
+              <h3 className="mt-5 text-xl font-semibold">{p.title}</h3>
+              <p className="mt-2 text-sm text-muted-foreground">{p.text}</p>
+              <span className="mt-5 inline-block text-sm font-medium text-primary group-hover:underline">Explore →</span>
+            </Link>
+          ))}
+        </div>
+      </section>
+
+      <section id="roadmap" className="bg-secondary border-y border-border scroll-mt-24">
+        <div className="mx-auto max-w-6xl px-4 py-20">
+          <h2 className="text-3xl md:text-4xl font-semibold tracking-tight text-center">The 6-stage admissions roadmap</h2>
+          <div className="mt-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {roadmap.map((s, i) => (
+              <div key={s.t} className="rounded-2xl bg-card border border-border p-6">
+                <span className="text-sm font-semibold text-primary">Stage {i + 1}</span>
+                <h3 className="mt-2 text-lg font-semibold">{s.t}</h3>
+                <p className="mt-1 text-sm text-muted-foreground">{s.d}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section className="mx-auto max-w-6xl px-4 py-20 grid gap-6 md:grid-cols-3 text-center">
+        {[["4.7★", "Google Reviews"], ["4.3★", "Student rating"], ["9", "Students per track, per month"]].map(([n, l]) => (
+          <div key={l} className="rounded-2xl border border-border p-8">
+            <p className="text-4xl font-semibold text-primary">{n}</p>
+            <p className="mt-2 text-sm text-muted-foreground">{l}</p>
+          </div>
+        ))}
+      </section>
+
+      <section className="mx-auto max-w-4xl px-4 text-center">
+        <div className="rounded-3xl bg-navy text-navy-foreground p-12">
+          <h2 className="text-3xl font-semibold">Know where you stand before you apply.</h2>
+          <p className="mt-3 text-navy-foreground/70">Start with the free Common Admission App diagnostic, then talk to an advisor.</p>
+          <div className="mt-8 flex flex-wrap justify-center gap-3"><CtaButtons /></div>
+        </div>
+      </section>
+    </SiteLayout>
   );
 }
