@@ -6,7 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/signin")({
   head: () => ({ meta: [{ title: "Sign in — Uppseekers" }] }),
-  validateSearch: (s: Record<string, unknown>) => ({
+  validateSearch: (s: Record<string, unknown>): { next?: string } => ({
     next: typeof s.next === "string" && s.next.startsWith("/") && !s.next.startsWith("//") ? s.next : undefined,
   }),
   component: SignIn,
