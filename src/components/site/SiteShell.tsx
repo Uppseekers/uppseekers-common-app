@@ -2,7 +2,7 @@ import { Link } from "@tanstack/react-router";
 import { useState, type ReactNode } from "react";
 import { Menu, Star, X, Mail, MapPin } from "lucide-react";
 import { toast } from "sonner";
-import logo from "@/assets/uppseekers-logo.png.asset.json";
+import logo from "@/assets/uppseekers-logo-transparent.png.asset.json";
 import { submitLead } from "@/lib/leads.functions";
 
 export function Logo({ className = "h-9 md:h-10 w-auto object-contain" }: { className?: string }) {
