@@ -23,6 +23,22 @@ function Page() {
           </div>
         </div>
       </section>
+      <section className="mx-auto max-w-5xl px-4 pb-16 grid gap-6 md:grid-cols-2">
+        <div className="rounded-2xl border border-border bg-card p-8 shadow-card">
+          <p className="text-xs font-semibold uppercase tracking-widest text-primary">Our Vision</p>
+          <h3 className="mt-2 text-xl font-semibold">Every ambitious student, ready for the world's best universities.</h3>
+          <p className="mt-3 text-sm text-muted-foreground">We want students across India to reach top universities on the strength of real work, original thinking and a clear sense of purpose.</p>
+        </div>
+        <div className="rounded-2xl border border-border bg-card p-8 shadow-card">
+          <p className="text-xs font-semibold uppercase tracking-widest text-primary">Our Core Mission</p>
+          <h3 className="mt-2 text-xl font-semibold">Turn interest into evidence.</h3>
+          <ul className="mt-3 space-y-2 text-sm text-muted-foreground list-disc pl-5">
+            <li>Give students hands-on internships, research and passion projects.</li>
+            <li>Offer close mentorship in small, merit-based cohorts.</li>
+            <li>Guide families through a clear, honest admissions roadmap.</li>
+          </ul>
+        </div>
+      </section>
     </SiteLayout>
   );
 }

@@ -1,3 +1,4 @@
+import { Link } from "@tanstack/react-router";
 import { useState } from "react";
 import { toast } from "sonner";
 import { submitLead } from "@/lib/leads.functions";
@@ -29,7 +30,7 @@ export function EnquiryForm({ compact = false }: { compact?: boolean }) {
           return toast.error("Please fill in all required fields with valid details.");
         }
         setBusy(true);
-        try { await submitLead({ data: { kind: "consultation", ...f } }); setDone(true); }
+        try { await submitLead({ data: { kind: "consultation", who: f.who, name: f.name, phone: f.phone, email: f.email, studentClass: f.studentClass, board: f.board } }); setDone(true); }
         catch { toast.error("Could not send. Please email team@uppseekers.com."); }
         finally { setBusy(false); }
       }}
@@ -63,15 +64,6 @@ export function EnquiryForm({ compact = false }: { compact?: boolean }) {
           {boards.map((b) => <option key={b}>{b}</option>)}
         </select>
       </div>
-      {!compact && (
-        <>
-          <select className={input} value={f.interest} onChange={set("interest")}>
-            <option value="">Interested in</option>
-            {["Alpha Internships", "Alpha Research", "Passion Projects", "Admissions guidance"].map((g) => <option key={g}>{g}</option>)}
-          </select>
-          <textarea className={input} rows={4} placeholder="Goals, target universities, questions…" value={f.message} onChange={set("message")} maxLength={2000} />
-        </>
-      )}
       <button disabled={busy} className="rounded-full bg-primary text-primary-foreground px-6 py-3 text-sm font-medium hover:opacity-90 disabled:opacity-60">
         {busy ? "Sending…" : "Contact Us"}
       </button>
@@ -86,6 +78,10 @@ const unis = [
   ["UCL", "ucl.ac.uk"], ["Cornell", "cornell.edu"], ["UPenn", "upenn.edu"], ["Carnegie Mellon", "cmu.edu"],
 ];
 
+const logoOverride: Record<string, string> = {
+  "nus.edu.sg": "https://upload.wikimedia.org/wikipedia/en/thumb/b/b9/NUS_coat_of_arms.svg/120px-NUS_coat_of_arms.svg.png",
+};
+
 export function UniversityLogos({ title = "Where our students aim — and get in" }: { title?: string }) {
   return (
     <section className="mx-auto max-w-6xl px-4 py-16">
@@ -94,7 +90,7 @@ export function UniversityLogos({ title = "Where our students aim — and get in
       <div className="mt-10 grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-4">
         {unis.map(([n, d]) => (
           <div key={d} className="flex flex-col items-center gap-2 rounded-xl border border-border bg-card p-4">
-            <img src={`https://www.google.com/s2/favicons?domain=${d}&sz=128`} alt={`${n} logo`} width={48} height={48} loading="lazy" className="h-12 w-12 object-contain" />
+            <img src={logoOverride[d] ?? `https://www.google.com/s2/favicons?domain=${d}&sz=128`} alt={`${n} logo`} width={48} height={48} loading="lazy" className="h-12 w-12 object-contain" />
             <span className="text-xs font-medium text-center">{n}</span>
           </div>
         ))}
@@ -146,8 +142,12 @@ export function Steps({ title, items }: { title: string; items: { t: string; d: 
 
 export function FormSection() {
   return (
-    <section className="mx-auto max-w-2xl px-4 py-16" id="contact-form">
-      <EnquiryForm compact />
+    <section className="mx-auto max-w-4xl px-4 py-16">
+      <div className="rounded-3xl border border-border bg-card p-10 text-center shadow-card">
+        <h2 className="text-2xl md:text-3xl font-semibold tracking-tight">Ready to talk to an advisor?</h2>
+        <p className="mt-3 text-muted-foreground">Enrolment is on a merit basis only. Share a few details and our team will reach out.</p>
+        <Link to="/contact" className="mt-6 inline-block rounded-full bg-primary text-primary-foreground px-6 py-3 text-sm font-medium hover:opacity-90">Contact Us</Link>
+      </div>
     </section>
   );
 }

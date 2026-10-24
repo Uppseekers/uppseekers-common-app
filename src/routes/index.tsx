@@ -4,6 +4,15 @@ import { SiteLayout, CtaButtons, seo } from "@/components/site/SiteShell";
 import { ImageSplit, MeritNote, UniversityLogos, FormSection } from "@/components/site/EnquiryForm";
 import team from "@/assets/internship-team.jpg";
 import lab from "@/assets/research-lab.jpg";
+import p1 from "@/assets/t-parent1.jpg";
+import s1 from "@/assets/t-student1.jpg";
+import s2 from "@/assets/t-student2.jpg";
+
+const testimonials = [
+  { img: p1, name: "Meera Iyer", role: "Parent, Class 11 student, Mumbai", q: "The mentors understood my daughter's interests and turned them into real projects. We finally had a clear plan for applications." },
+  { img: s1, name: "Arjun Mehta", role: "Student, Class 12, Navi Mumbai", q: "My research mentor pushed me to ask better questions. Finishing a full paper gave me confidence and something real to write about." },
+  { img: s2, name: "Ananya Rao", role: "Student, Class 10, Pune", q: "The internship sprint was hands-on from day one. I learnt more in a few weeks than I expected, and loved the small cohort." },
+];
 
 export const Route = createFileRoute("/")({
   head: () => seo(
@@ -95,6 +104,22 @@ function Home() {
             <p className="mt-2 text-sm text-muted-foreground">{l}</p>
           </div>
         ))}
+      </section>
+
+      <section className="mx-auto max-w-6xl px-4 py-16">
+        <h2 className="text-3xl md:text-4xl font-semibold tracking-tight text-center">What families say</h2>
+        <div className="mt-10 grid gap-6 md:grid-cols-3">
+          {testimonials.map((t) => (
+            <figure key={t.name} className="rounded-2xl border border-border bg-card p-7 shadow-card">
+              <div className="flex gap-1">{[0,1,2,3,4].map((i) => <Star key={i} className="h-4 w-4 fill-warning text-warning" />)}</div>
+              <blockquote className="mt-4 text-sm text-muted-foreground">"{t.q}"</blockquote>
+              <figcaption className="mt-6 flex items-center gap-3">
+                <img src={t.img} alt={t.name} width={48} height={48} loading="lazy" className="h-12 w-12 rounded-full object-cover" />
+                <div><p className="font-semibold text-sm">{t.name}</p><p className="text-xs text-muted-foreground">{t.role}</p></div>
+              </figcaption>
+            </figure>
+          ))}
+        </div>
       </section>
 
       <UniversityLogos />
