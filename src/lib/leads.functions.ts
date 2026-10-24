@@ -7,6 +7,9 @@ const leadSchema = z.object({
   email: z.string().trim().max(255).optional().default(""),
   phone: z.string().trim().min(7).max(20).regex(/^[+\d\s()-]+$/, "Invalid phone"),
   grade: z.string().trim().max(50).optional().default(""),
+  who: z.string().trim().max(20).optional().default(""),
+  studentClass: z.string().trim().max(10).optional().default(""),
+  board: z.string().trim().max(50).optional().default(""),
   interest: z.string().trim().max(100).optional().default(""),
   message: z.string().trim().max(2000).optional().default(""),
 });
